@@ -24,7 +24,7 @@
 </head>
 <body>
   <h1>Aksh Dashboard</h1>
-  <p class="sub">Omni controller · API keys · usage · skills · <a href="/web/chat.html">Chat</a> · <a href="/docs">API</a></p>
+  <p class="sub">Omni controller · API keys · usage · skills · <a href="/web/chat.html">Chat</a> · <a href="/web/studio/">Studio</a> · <a href="/docs">API</a></p>
 
   <div class="grid">
     <div class="card">
@@ -67,6 +67,21 @@
       <input id="skillGit" placeholder="https://github.com/org/skill-repo" />
       <button onclick="registerSkill()">Add &amp; ingest for training</button>
       <p id="skillMsg" class="sub"></p>
+      <p class="sub">Pipeline: <code>scripts/run_pipeline.ps1</code> → Colab → <code>brain_register.py</code></p>
+    </div>
+
+    <div class="card">
+      <h2>Omni Brain (active)</h2>
+      <div class="stat" id="brainVersion" style="font-size:1.1rem">—</div>
+      <p class="sub" id="brainMeta">Load with API key</p>
+      <button class="secondary" onclick="loadBrain()">Refresh brain</button>
+    </div>
+
+    <div class="card">
+      <h2>Aksh Search</h2>
+      <div class="stat" id="searchStatus" style="font-size:1.1rem">—</div>
+      <p class="sub" id="searchMeta">Provider &amp; API key status from /health</p>
+      <button class="secondary" onclick="loadSearch()">Refresh search</button>
     </div>
   </div>
 
@@ -174,12 +189,42 @@
       }
     }
 
+    async function loadBrain() {
+      try {
+        const data = await api('/v1/omni/brain');
+        const active = data.active || {};
+        document.getElementById('brainVersion').textContent = active.version_id || data.active_version_id || '—';
+        document.getElementById('brainMeta').textContent =
+          (active.label || 'Omni') + ' · type=' + (active.type || '?') + ' · updated ' + (data.updated_at || '');
+      } catch (e) {
+        document.getElementById('brainMeta').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function loadSearch() {
+      try {
+        const r = await fetch(base() + '/health');
+        const data = await r.json();
+        const s = data.search || {};
+        document.getElementById('searchStatus').textContent = s.ready ? 'Ready' : (s.enabled ? 'Enabled (no key)' : 'Disabled');
+        document.getElementById('searchMeta').textContent =
+          'provider=' + (s.provider || '?') + ' · api_key=' + (s.api_key_configured ? 'set' : 'missing');
+        if (!s.api_key_configured) {
+          document.getElementById('searchMeta').innerHTML += '<br><span class="ok">Chat works without search — set AKSH_SEARCH_API_KEY in .env</span>';
+        }
+      } catch (e) {
+        document.getElementById('searchMeta').textContent = 'Error: ' + e.message;
+      }
+    }
+
     const savedBase = localStorage.getItem('nr_base');
     const savedKey = localStorage.getItem('nr_key');
     if (savedBase) document.getElementById('baseUrl').value = savedBase;
     if (savedKey) {
       document.getElementById('apiKey').value = savedKey;
       loadUsage();
+      loadBrain();
+      loadSearch();
     }
   </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SarvAI NeuralRouter Chat</title>
+  <title>Aksh Chat | Aitotech</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -17,12 +17,13 @@
     }
     header h1 { margin: 0; font-size: 18px; }
     header p { margin: 4px 0 0; font-size: 12px; color: #8b949e; }
+    header a { color: #58a6ff; font-size: 12px; }
     #config {
       padding: 12px 20px; background: #0d1117; border-bottom: 1px solid #21262d;
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px;
     }
-    #config input {
-      flex: 1; min-width: 200px; padding: 8px; border-radius: 6px;
+    #config input, #config select {
+      flex: 1; min-width: 120px; padding: 8px; border-radius: 6px;
       border: 1px solid #30363d; background: #161b22; color: #e8e8e8;
     }
     #messages {
@@ -35,48 +36,77 @@
     .meta { font-size: 11px; color: #6e7681; margin-top: 8px; }
     #input-row {
       padding: 16px 20px; border-top: 1px solid #21262d; background: #161b22;
-      display: flex; gap: 10px; max-width: 900px; width: 100%; margin: 0 auto;
+      display: flex; gap: 10px; max-width: 900px; width: 100%; margin: 0 auto; flex-direction: column;
     }
     #input-row textarea {
       flex: 1; min-height: 48px; max-height: 160px; padding: 12px;
       border-radius: 8px; border: 1px solid #30363d; background: #0d1117;
-      color: #e8e8e8; resize: vertical; font-family: inherit;
+      color: #e8e8e8; resize: vertical; font-family: inherit; width: 100%;
     }
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     button {
       padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;
       background: linear-gradient(135deg, #6c8ef5, #4a6fd4); color: #fff; font-weight: 600;
     }
+    button.secondary { background: #21262d; }
     button:disabled { opacity: 0.5; cursor: wait; }
+    .tabs button { padding: 8px 14px; }
+    .tab-active { outline: 2px solid #58a6ff; }
   </style>
 </head>
 <body>
   <header>
-    <h1>⚡ SarvAI NeuralRouter</h1>
-    <p>5-brain routing — chat from laptop. API key stays in your browser only.</p>
+    <h1>⚡ Aksh Chat</h1>
+    <p>Omni controller · Aksh Search · <a href="/web/dashboard/">Dashboard</a> · <a href="/web/studio/">Studio</a></p>
   </header>
   <div id="config">
     <label>API URL</label>
     <input id="apiUrl" value="http://127.0.0.1:8000" />
     <label>API Key</label>
     <input id="apiKey" type="password" placeholder="nr_..." />
+    <label>Search</label>
+    <select id="searchMode">
+      <option value="auto">Auto</option>
+      <option value="on">On</option>
+      <option value="off">Off</option>
+    </select>
+    <div class="tabs">
+      <button type="button" id="tabChat" class="tab-active" onclick="setMode('chat')">Chat</button>
+      <button type="button" id="tabAgent" class="secondary" onclick="setMode('agent')">Agent</button>
+    </div>
     <button type="button" id="saveCfg">Save</button>
   </div>
   <div id="messages"></div>
   <div id="input-row">
-    <textarea id="query" placeholder="Ask anything — math, code, Hindi..."></textarea>
-    <button id="send">Send</button>
+    <textarea id="query" placeholder="Ask anything — math, code, Hindi, latest news..."></textarea>
+    <div class="actions">
+      <button id="send">Send</button>
+    </div>
   </div>
   <script>
     const msgs = document.getElementById('messages');
     const apiUrl = document.getElementById('apiUrl');
     const apiKey = document.getElementById('apiKey');
+    const searchMode = document.getElementById('searchMode');
+    let uiMode = 'chat';
+
     apiUrl.value = localStorage.getItem('nr_url') || apiUrl.value;
     apiKey.value = localStorage.getItem('nr_key') || '';
+    searchMode.value = localStorage.getItem('aksh_search_mode') || 'auto';
+
     document.getElementById('saveCfg').onclick = () => {
       localStorage.setItem('nr_url', apiUrl.value.replace(/\/$/, ''));
       localStorage.setItem('nr_key', apiKey.value);
+      localStorage.setItem('aksh_search_mode', searchMode.value);
       alert('Saved');
     };
+
+    function setMode(mode) {
+      uiMode = mode;
+      document.getElementById('tabChat').classList.toggle('tab-active', mode === 'chat');
+      document.getElementById('tabAgent').classList.toggle('tab-active', mode === 'agent');
+    }
+
     function add(role, text, meta) {
       const d = document.createElement('div');
       d.className = 'msg ' + role;
@@ -90,6 +120,7 @@
       msgs.appendChild(d);
       msgs.scrollTop = msgs.scrollHeight;
     }
+
     async function sendFeedback(rowId, thumbs) {
       const base = localStorage.getItem('nr_url') || apiUrl.value;
       const key = localStorage.getItem('nr_key') || apiKey.value;
@@ -99,6 +130,7 @@
         body: JSON.stringify({ row_id: rowId, thumbs })
       });
     }
+
     document.getElementById('send').onclick = async () => {
       const q = document.getElementById('query').value.trim();
       if (!q) return;
@@ -106,23 +138,36 @@
       btn.disabled = true;
       add('user', q);
       document.getElementById('query').value = '';
-      const base = localStorage.getItem('nr_url') || apiUrl.value;
+      const base = (localStorage.getItem('nr_url') || apiUrl.value).replace(/\/$/, '');
       const key = localStorage.getItem('nr_key') || apiKey.value;
+      const search = localStorage.getItem('aksh_search_mode') || searchMode.value;
       try {
-        const res = await fetch(base + '/v1/chat', {
+        const path = uiMode === 'agent' ? '/v1/agent/run' : '/v1/chat';
+        const body = uiMode === 'agent' ? { task: q } : { message: q, search };
+        const res = await fetch(base + path, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-          body: JSON.stringify({ message: q })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || res.statusText);
-        add('bot', data.answer, `Brain: ${data.brain_used} · confidence: ${(data.confidence*100).toFixed(0)}% · row: ${data.row_id}`);
-        const bar = document.createElement('div');
-        bar.className = 'meta';
-        bar.innerHTML = '<button type="button">👍</button> <button type="button">👎</button>';
-        bar.querySelectorAll('button')[0].onclick = () => sendFeedback(data.row_id, 'up');
-        bar.querySelectorAll('button')[1].onclick = () => sendFeedback(data.row_id, 'down');
-        msgs.lastChild.appendChild(bar);
+        if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+        const metaParts = uiMode === 'agent'
+          ? ['Agent', 'tools: ' + (data.tools_used || []).join(', ')]
+          : [
+              'Brain: ' + data.brain_used,
+              'search: ' + (data.web_search_used ? 'used' : 'no'),
+              'confidence: ' + ((data.confidence || 0) * 100).toFixed(0) + '%',
+              'row: ' + data.row_id
+            ];
+        add('bot', data.answer, metaParts.join(' · '));
+        if (uiMode === 'chat' && data.row_id) {
+          const bar = document.createElement('div');
+          bar.className = 'meta';
+          bar.innerHTML = '<button type="button">👍</button> <button type="button">👎</button>';
+          bar.querySelectorAll('button')[0].onclick = () => sendFeedback(data.row_id, 'up');
+          bar.querySelectorAll('button')[1].onclick = () => sendFeedback(data.row_id, 'down');
+          msgs.lastChild.appendChild(bar);
+        }
       } catch (e) {
         add('bot', 'Error: ' + e.message);
       }

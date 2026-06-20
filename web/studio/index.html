@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aksh Web Studio | Aitotech</title>
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+    header { padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    header h1 { margin:0; font-size:16px; }
+    header a { color:var(--accent); text-decoration:none; font-size:13px; }
+    .layout { flex:1; display:grid; grid-template-columns:240px 1fr 320px; min-height:0; }
+    .sidebar, .chat-panel { border-right:1px solid var(--border); background:var(--panel); overflow:auto; }
+    .chat-panel { border-right:none; border-left:1px solid var(--border); display:flex; flex-direction:column; }
+    .sidebar { padding:12px; }
+    .sidebar h3 { margin:0 0 8px; font-size:12px; color:var(--muted); text-transform:uppercase; }
+    button, select, input, textarea { font:inherit; }
+    button { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:8px 10px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#21262d; color:var(--text); border:1px solid var(--border); }
+    .file-tree { list-style:none; padding:0; margin:0; font-size:13px; }
+    .file-tree li { padding:4px 6px; border-radius:4px; cursor:pointer; }
+    .file-tree li:hover, .file-tree li.active { background:#21262d; }
+    #editor { flex:1; min-height:0; }
+    .tabs { display:flex; gap:4px; margin-bottom:8px; }
+    .tabs button { flex:1; }
+    .tab-active { outline:2px solid var(--accent); }
+    .chat-log { flex:1; overflow:auto; padding:12px; font-size:13px; }
+    .chat-msg { margin-bottom:10px; padding:8px; border-radius:8px; background:#0d1117; border:1px solid var(--border); white-space:pre-wrap; }
+    .chat-input { padding:12px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+    .chat-input textarea { width:100%; min-height:70px; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px; resize:vertical; }
+    label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .row input { flex:1; min-width:120px; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:#0d1117; color:var(--text); }
+    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } .sidebar, .chat-panel { max-height:240px; } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Aksh Web Studio</h1>
+    <a href="/web/dashboard/">Dashboard</a>
+    <a href="/web/chat.html">Chat</a>
+    <span style="color:var(--muted);font-size:12px">Monaco · localStorage projects · @file context</span>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h3>Project</h3>
+      <div class="row" style="margin-bottom:8px">
+        <input id="projectName" placeholder="my-app" />
+        <button onclick="createProject()">New</button>
+      </div>
+      <select id="projectSelect" onchange="openProject(this.value)" style="width:100%;margin-bottom:8px;padding:6px;background:#0d1117;color:var(--text);border:1px solid var(--border);border-radius:6px"></select>
+      <div class="row" style="margin-bottom:8px">
+        <input id="newFileName" placeholder="src/main.py" />
+        <button class="secondary" onclick="addFile()">Add file</button>
+      </div>
+      <ul id="fileTree" class="file-tree"></ul>
+      <h3 style="margin-top:16px">Settings</h3>
+      <label>API Key</label>
+      <input id="apiKey" type="password" placeholder="Bearer key" style="width:100%;margin-bottom:8px;padding:6px;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)" />
+      <button class="secondary" onclick="saveSettings()">Save settings</button>
+    </aside>
+
+    <main id="editor"></main>
+
+    <aside class="chat-panel">
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div class="tabs">
+          <button id="tabChat" class="tab-active" onclick="setTab('chat')">Chat</button>
+          <button id="tabAgent" onclick="setTab('agent')">Agent</button>
+        </div>
+        <div class="row">
+          <label>Search</label>
+          <select id="searchMode" style="padding:6px;border-radius:6px;background:#0d1117;color:var(--text);border:1px solid var(--border)">
+            <option value="auto">Auto</option>
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+          <label><input type="checkbox" id="attachFile" checked /> @active file</label>
+        </div>
+      </div>
+      <div id="chatLog" class="chat-log"></div>
+      <div class="chat-input">
+        <textarea id="prompt" placeholder="Ask about your project..."></textarea>
+        <button id="sendBtn" onclick="send()">Send</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const LS_PROJECTS = 'aksh_studio_projects';
+    const LS_ACTIVE = 'aksh_studio_active';
+    const LS_KEY = 'nr_key';
+    const LS_SEARCH = 'aksh_search_mode';
+    let editor = null;
+    let activeTab = 'chat';
+    let state = { name: 'default', files: { 'README.md': '# Aksh Studio\n', '.akshrules': 'Be concise. Prefer Python.' }, activeFile: 'README.md' };
+
+    function loadProjects() {
+      const raw = localStorage.getItem(LS_PROJECTS);
+      return raw ? JSON.parse(raw) : {};
+    }
+    function saveProjects(all) { localStorage.setItem(LS_PROJECTS, JSON.stringify(all)); }
+    function persist() {
+      const all = loadProjects();
+      all[state.name] = state;
+      saveProjects(all);
+      localStorage.setItem(LS_ACTIVE, state.name);
+      refreshProjectSelect();
+    }
+    function refreshProjectSelect() {
+      const sel = document.getElementById('projectSelect');
+      const all = loadProjects();
+      sel.innerHTML = '';
+      Object.keys(all).forEach(name => {
+        const o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        if (name === state.name) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+    function createProject() {
+      const name = document.getElementById('projectName').value.trim() || ('project-' + Date.now());
+      state = { name, files: { 'README.md': '# ' + name + '\n', '.akshrules': '' }, activeFile: 'README.md' };
+      persist();
+      renderTree();
+      loadEditorContent();
+    }
+    function openProject(name) {
+      if (!name) return;
+      const all = loadProjects();
+      if (!all[name]) return;
+      state = all[name];
+      renderTree();
+      loadEditorContent();
+    }
+    function addFile() {
+      const path = document.getElementById('newFileName').value.trim();
+      if (!path) return;
+      state.files[path] = '';
+      state.activeFile = path;
+      persist();
+      renderTree();
+      loadEditorContent();
+    }
+    function renderTree() {
+      const ul = document.getElementById('fileTree');
+      ul.innerHTML = '';
+      Object.keys(state.files).sort().forEach(path => {
+        const li = document.createElement('li');
+        li.textContent = path;
+        if (path === state.activeFile) li.classList.add('active');
+        li.onclick = () => { saveEditorContent(); state.activeFile = path; persist(); renderTree(); loadEditorContent(); };
+        ul.appendChild(li);
+      });
+    }
+    function saveEditorContent() {
+      if (editor && state.activeFile) state.files[state.activeFile] = editor.getValue();
+    }
+    function loadEditorContent() {
+      if (!editor) return;
+      const val = state.files[state.activeFile] ?? '';
+      editor.setValue(val);
+    }
+    function saveSettings() {
+      localStorage.setItem(LS_KEY, document.getElementById('apiKey').value);
+      localStorage.setItem(LS_SEARCH, document.getElementById('searchMode').value);
+      alert('Saved');
+    }
+    function setTab(tab) {
+      activeTab = tab;
+      document.getElementById('tabChat').classList.toggle('tab-active', tab === 'chat');
+      document.getElementById('tabAgent').classList.toggle('tab-active', tab === 'agent');
+    }
+    function addMsg(role, text) {
+      const d = document.createElement('div');
+      d.className = 'chat-msg';
+      d.textContent = (role === 'user' ? 'You: ' : 'Aksh: ') + text;
+      document.getElementById('chatLog').appendChild(d);
+      document.getElementById('chatLog').scrollTop = 99999;
+    }
+    async function send() {
+      const q = document.getElementById('prompt').value.trim();
+      if (!q) return;
+      saveEditorContent();
+      persist();
+      const key = document.getElementById('apiKey').value || localStorage.getItem(LS_KEY) || '';
+      const search = document.getElementById('searchMode').value;
+      let file_context = '';
+      if (document.getElementById('attachFile').checked && state.activeFile) {
+        file_context = 'File: ' + state.activeFile + '\n```\n' + (state.files[state.activeFile] || '') + '\n```';
+      }
+      const rules = state.files['.akshrules'] || '';
+      addMsg('user', q);
+      document.getElementById('prompt').value = '';
+      document.getElementById('sendBtn').disabled = true;
+      try {
+        const path = activeTab === 'agent' ? '/v1/agent/run' : '/v1/chat';
+        const body = activeTab === 'agent'
+          ? { task: q, file_context, rules }
+          : { message: q, search, file_context, rules };
+        const res = await fetch(window.location.origin + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+        addMsg('bot', data.answer || JSON.stringify(data, null, 2));
+      } catch (e) {
+        addMsg('bot', 'Error: ' + e.message);
+      }
+      document.getElementById('sendBtn').disabled = false;
+    }
+
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: '', language: 'markdown', theme: 'vs-dark', automaticLayout: true,
+      });
+      editor.onDidChangeModelContent(() => { saveEditorContent(); });
+
+      const all = loadProjects();
+      const active = localStorage.getItem(LS_ACTIVE);
+      if (active && all[active]) state = all[active];
+      else if (!all[state.name]) all[state.name] = state;
+      saveProjects(all);
+      refreshProjectSelect();
+      renderTree();
+      loadEditorContent();
+
+      const savedKey = localStorage.getItem(LS_KEY);
+      if (savedKey) document.getElementById('apiKey').value = savedKey;
+      const savedSearch = localStorage.getItem(LS_SEARCH);
+      if (savedSearch) document.getElementById('searchMode').value = savedSearch;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Render Blueprint — Aksh API (see docs/DEPLOY.md)
+services:
+  - type: web
+    name: aksh-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: NEURALROUTER_ALLOW_UNAUTH
+        value: "false"
+      - key: SAAS_ALLOW_PUBLIC_SIGNUP
+        value: "false"
+      - key: AKSH_SEARCH_ENABLED
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: AKSH_SEARCH_API_KEY
+        sync: false
+      - key: OMNI_VAULT_HMAC_KEY
+        sync: false
+      - key: OMNI_VAULT_ENCRYPTION_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+databases:
+  - name: aksh-postgres
+    plan: starter
+    ipAllowList: []

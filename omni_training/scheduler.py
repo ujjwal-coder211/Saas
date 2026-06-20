@@ -10,6 +10,18 @@ from omni_training.build_dataset import TRAIN_THRESHOLDS, build
 from omni_training.research_report import build_report
 
 
+def _suggest_next_version() -> str:
+    from omni_training.brain_registry import load_registry
+
+    reg = load_registry()
+    nums = []
+    for vid in reg.get("versions", {}):
+        if vid.startswith("omni-v") and vid[6:].isdigit():
+            nums.append(int(vid[6:]))
+    n = max(nums) + 1 if nums else 2
+    return f"omni-v{n}"
+
+
 def check_and_report() -> dict:
     build_result = build(threshold_check=TRAIN_THRESHOLDS["manual_review"])
     research = build_report()
@@ -22,16 +34,23 @@ def check_and_report() -> dict:
 
     if w >= TRAIN_THRESHOLDS["sft_round_2"]:
         build_result["action"] = "run_colab_omni_sft"
+        suggested_version = _suggest_next_version()
         build_result["message"] = (
-            f"{w} rows. Colab train → python omni_training/brain_register.py omni-vN ... "
-            "→ review → python brain_promote.py omni-vN --approve"
+            f"{w} rows. Colab train → python omni_training/colab_export.py → "
+            f"brain_register.py {suggested_version} ... "
+            "→ brain_eval.py → brain_promote.py --approve"
         )
         build_result["brain_pipeline"] = {
-            "step_1": "Colab SFT on vault/omni_v1_train.jsonl",
-            "step_2": "brain_register.py (candidate)",
-            "step_3": "Your review + eval_score",
-            "step_4": "brain_promote.py (replaces active main brain)",
+            "step_1": "python omni_training/colab_export.py",
+            "step_2": f"Colab SFT → brain_register.py {suggested_version} lora_hf ...",
+            "step_3": f"python omni_training/brain_eval.py {suggested_version}",
+            "step_4": f"python omni_training/brain_promote.py {suggested_version} --approve",
         }
+        build_result["suggested_version_id"] = suggested_version
+        build_result["brain_register_command"] = (
+            f"python omni_training/brain_register.py {suggested_version} lora_hf "
+            "--label \"Omni next\" --adapter-repo YOUR/repo --eval-score 0.85"
+        )
     elif w >= TRAIN_THRESHOLDS["manual_review"]:
         build_result["action"] = "manual_review_then_train"
         build_result["message"] = f"{w} rows — review research_report.json then train."

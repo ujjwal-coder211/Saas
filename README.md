@@ -8,7 +8,8 @@ Aitotech (company)
         └── Omni (model + controller brain)
 ```
 
-Full roadmap: [docs/AKSH_ROADMAP.md](docs/AKSH_ROADMAP.md)
+Full roadmap: [docs/AKSH_ROADMAP.md](docs/AKSH_ROADMAP.md)  
+Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
 
 ## Stack
 
@@ -16,9 +17,11 @@ Full roadmap: [docs/AKSH_ROADMAP.md](docs/AKSH_ROADMAP.md)
 |-------|--------|
 | Aksh API + Omni Controller | `neuralrouter/` |
 | Web Search | `neuralrouter/search/` |
+| Aksh Agent | `neuralrouter/agent/` |
+| Codebase index (MVP) | `neuralrouter/index/` |
 | SaaS billing | `saas/` |
 | Omni training + skill ingest | `omni_training/` |
-| Dashboard + chat | `web/` |
+| Dashboard + chat + studio | `web/` |
 
 ## Quick start
 
@@ -29,21 +32,94 @@ docker compose up --build
 
 - Dashboard: http://localhost:8000/web/dashboard/
 - Chat: http://localhost:8000/web/chat.html
+- Studio: http://localhost:8000/web/studio/
 
-## New in Aksh v0.2
+## M0 — Foundation verify
 
-| Feature | Endpoint / module |
-|---------|-------------------|
-| **Omni Controller** | `neuralrouter/omni_controller.py` |
-| **Aksh Search** | `search=auto\|on\|off` on `/v1/chat` |
-| **Add Skill → train** | `POST /saas/v1/skills/register` |
+Run before any milestone work:
 
-## Chat with search
+```powershell
+.\scripts\verify_setup.ps1
+# or
+python scripts/verify_setup.py
+```
+
+Checks: Python imports, `brain_registry.json`, docker-compose syntax, `/health` smoke test (no live API keys required).
+
+## M1 — Omni brain promote
+
+**Read active brain (authenticated):** `GET /v1/omni/brain`
+
+**Pre-promote checklist:**
+
+```powershell
+.\scripts\eval_omni_brain.ps1 omni-v1
+python omni_training/brain_eval.py omni-v1
+```
+
+**Promote flow:**
+
+```powershell
+# After Colab training — register candidate
+python omni_training/brain_register.py omni-v2 lora_hf --label "Omni v2" --adapter-repo YOU/repo --eval-score 0.85
+
+# Checklist then hot-replace
+python omni_training/brain_eval.py omni-v2
+python omni_training/brain_promote.py omni-v2 --approve
+```
+
+Admin API: `GET /admin/omni/brain`, `POST /admin/omni/brain/promote` + header `X-Omni-Admin-Key`
+
+Dashboard shows active brain version via `/v1/omni/brain`.
+
+## M2 — Aksh Search
+
+Chat UI search toggle: **Auto / On / Off** → `search` field on `POST /v1/chat`.
 
 ```json
 POST /v1/chat
 { "message": "Aaj ka latest AI news?", "search": "auto" }
 ```
+
+Set `AKSH_SEARCH_API_KEY` (Tavily/Serper) in `.env`. Without key, chat works — search skipped gracefully.
+
+Dashboard **Aksh Search** card reads `/health` → `search.ready`.
+
+## M3 — Training flywheel
+
+```powershell
+.\scripts\run_pipeline.ps1
+```
+
+Runs: `curate.py` → `build_dataset.py` → `research_report.py` → `scheduler.py`
+
+**Skill ingest:** Dashboard → Add Skill → then run pipeline.
+
+**Colab export:**
+
+```powershell
+python omni_training/colab_export.py
+```
+
+Upload `omni_training/data/colab_export.zip` to Colab. Scheduler suggests next `omni-vN` + `brain_register` command when thresholds met.
+
+## M4 — Web Studio
+
+`web/studio/index.html` — Monaco editor, localStorage projects, file tree, `.akshrules`, @file context on chat.
+
+## M5 — Aksh Agent
+
+- `POST /v1/agent/run` — plan → tools (read/write/grep) → synthesize (max 5 steps)
+- Agent tab in Chat and Studio
+- `neuralrouter/index/` — keyword index scaffold (Qdrant-ready)
+
+## M6 — Production
+
+- `deploy/railway.toml`, `deploy/render.yaml`
+- `.env.production.example`
+- Extended `GET /health` with version, brain, search
+
+## Chat with search
 
 Set `AKSH_SEARCH_API_KEY` (Tavily/Serper) in `.env`.
 

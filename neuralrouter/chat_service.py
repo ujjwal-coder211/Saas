@@ -142,10 +142,18 @@ async def run_chat(
     message: str,
     force_model: str | None = None,
     search_mode: SearchMode = "auto",
+    file_context: str | None = None,
+    rules: str | None = None,
 ) -> ChatResult:
-    plan = plan_turn(message, force_model=force_model, search_mode=search_mode)
+    enriched = message
+    if file_context:
+        enriched = f"@file context:\n{file_context.strip()}\n\nUser message:\n{message}"
+    if rules:
+        enriched = f"Project rules (.akshrules):\n{rules.strip()}\n\n{enriched}"
 
-    hint = await omni_native_plan_hint(message)
+    plan = plan_turn(enriched, force_model=force_model, search_mode=search_mode)
+
+    hint = await omni_native_plan_hint(enriched)
     if hint:
         plan = OmniPlan(
             query=plan.query,
@@ -163,7 +171,7 @@ async def run_chat(
 
     if plan.use_web_search:
         try:
-            search_result = await aksh_search(message)
+            search_result = await aksh_search(enriched)
             plan = apply_search_context(plan, search_result)
         except Exception:
             logger.exception("Aksh Search failed — continuing without web context")

@@ -39,6 +39,8 @@ from saas.rate_limit import rate_limit
 from neuralrouter.router import REGISTRY, manual_expert
 from neuralrouter.concurrency import ConcurrencyGuard, active_users_summary
 from neuralrouter.load_balancer import balancer
+from neuralrouter.omni_brain.loader import active_brain_summary
+from neuralrouter.search import search_status
 from saas.billing.usage import QuotaExceededError, check_quota, record_usage
 from saas.billing.stripe_webhooks import handle_webhook
 from saas.api.routes import router as saas_router
@@ -85,6 +87,8 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=MAX_MESSAGE_CHARS)
     force_model: Optional[str] = None
     search: Optional[Literal["auto", "on", "off"]] = "auto"
+    file_context: Optional[str] = Field(default=None, max_length=MAX_MESSAGE_CHARS)
+    rules: Optional[str] = Field(default=None, max_length=8000)
 
     @field_validator("message")
     @classmethod
@@ -123,6 +127,16 @@ class FeedbackRequest(BaseModel):
     time_spent_s: Optional[float] = Field(None, ge=0, le=86400)
 
 
+class AgentRunRequest(BaseModel):
+    task: str = Field(..., min_length=1, max_length=MAX_MESSAGE_CHARS)
+    file_context: str = Field(default="", max_length=MAX_MESSAGE_CHARS)
+    rules: str = Field(default="", max_length=8000)
+    project_root: Optional[str] = Field(
+        default=None,
+        description="Optional sandbox root path on server (dev only)",
+    )
+
+
 def _messages_to_query(messages: list[OpenAIMessage]) -> str:
     users = [m.content for m in messages if m.role == "user"]
     if not users:
@@ -151,6 +165,8 @@ async def _execute_chat(
     force_model: Optional[str],
     auth: AuthContext,
     search_mode: str = "auto",
+    file_context: str | None = None,
+    rules: str | None = None,
 ) -> tuple:
     request_id = f"req_{uuid.uuid4().hex[:16]}"
 
@@ -173,7 +189,13 @@ async def _execute_chat(
         manual_expert(force_model)
 
     async with ConcurrencyGuard(auth.client_label):
-        result = await run_chat(message, force_model, search_mode=search_mode)  # type: ignore[arg-type]
+        result = await run_chat(
+            message,
+            force_model,
+            search_mode=search_mode,  # type: ignore[arg-type]
+            file_context=file_context,
+            rules=rules,
+        )
 
     row_id = log_interaction(
         query=message,
@@ -207,12 +229,23 @@ async def _execute_chat(
 
 @app.get("/health")
 async def health():
+    brain = active_brain_summary()
+    search = search_status()
     return {
         "status": "ok",
         "app": APP_NAME,
         "version": APP_VERSION,
+        "product": "Aksh by Aitotech",
+        "model": "Omni",
         "saas_db": saas_db_enabled(),
         "models_loaded": list(REGISTRY.keys()),
+        "brain": {
+            "active_version_id": brain.get("version_id"),
+            "label": brain.get("label"),
+            "type": brain.get("type"),
+            "fallback": brain.get("fallback", False),
+        },
+        "search": search,
         "load": active_users_summary(),
         "provider_circuits": balancer.status(),
     }
@@ -227,6 +260,7 @@ async def root():
         "roadmap": "/docs/AKSH_ROADMAP.md",
         "dashboard": "/web/dashboard/",
         "chat": "/web/chat.html",
+        "studio": "/web/studio/",
     }
 
 
@@ -237,7 +271,14 @@ async def chat(
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
     rate_limit(request, auth)
-    result, row_id = await _execute_chat(body.message, body.force_model, auth, body.search or "auto")
+    result, row_id = await _execute_chat(
+        body.message,
+        body.force_model,
+        auth,
+        body.search or "auto",
+        file_context=body.file_context,
+        rules=body.rules,
+    )
     return ChatResponse(
         row_id=row_id,
         answer=result.answer,
@@ -320,6 +361,70 @@ async def list_models(
             }
         )
     return {"object": "list", "data": data}
+
+
+@app.get("/v1/omni/brain")
+async def omni_brain_public(
+    request: Request,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+):
+    """Read-only active Omni brain info for authenticated users."""
+    rate_limit(request, auth)
+    from omni_training.brain_registry import load_registry
+
+    reg = load_registry()
+    active = active_brain_summary()
+    return {
+        "active_version_id": reg.get("active_version_id"),
+        "active": active,
+        "updated_at": reg.get("updated_at"),
+    }
+
+
+@app.post("/v1/agent/run")
+async def agent_run(
+    request: Request,
+    body: AgentRunRequest,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+):
+    """Aksh Agent scaffold — plan → tools → synthesize (max 5 steps)."""
+    rate_limit(request, auth)
+    from pathlib import Path
+
+    from neuralrouter.agent.agent_loop import run_agent_loop
+    from neuralrouter.model_clients import call_model
+
+    project_root = Path(body.project_root).resolve() if body.project_root else None
+
+    async def llm_plan(messages: list[dict]) -> str:
+        text = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+        result = await call_model(text, "qwen", system_prompt="You are Aksh Agent.")
+        return result.get("content", "")
+
+    try:
+        result = await run_agent_loop(
+            body.task,
+            file_context=body.file_context,
+            rules=body.rules,
+            project_root=project_root,
+            llm_plan=llm_plan,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return {
+        "answer": result.answer,
+        "tools_used": result.tools_used,
+        "steps": [
+            {
+                "step": s.step,
+                "kind": s.kind,
+                "content": s.content[:2000],
+                "tool_result": s.tool_result,
+            }
+            for s in result.steps
+        ],
+    }
 
 
 @app.post("/v1/feedback")
