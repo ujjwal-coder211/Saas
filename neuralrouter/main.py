@@ -42,6 +42,7 @@ from neuralrouter.load_balancer import balancer
 from saas.billing.usage import QuotaExceededError, check_quota, record_usage
 from saas.billing.stripe_webhooks import handle_webhook
 from saas.api.routes import router as saas_router
+from saas.api.skills import router as skills_router
 from saas.db.connection import saas_db_enabled
 
 sys.path.insert(0, str(ROOT_DIR))
@@ -63,6 +64,7 @@ if CORS_ORIGINS:
     )
 
 app.include_router(saas_router)
+app.include_router(skills_router)
 
 _web_dir = ROOT_DIR / "web"
 if _web_dir.exists():
@@ -82,6 +84,7 @@ async def security_headers(request: Request, call_next):
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=MAX_MESSAGE_CHARS)
     force_model: Optional[str] = None
+    search: Optional[Literal["auto", "on", "off"]] = "auto"
 
     @field_validator("message")
     @classmethod
@@ -97,6 +100,8 @@ class ChatResponse(BaseModel):
     collaborative: bool
     confidence: float
     tokens_used: Optional[int] = None
+    web_search_used: bool = False
+    omni_controller: Optional[dict] = None
 
 
 class OpenAIMessage(BaseModel):
@@ -108,6 +113,7 @@ class OpenAIChatRequest(BaseModel):
     model: str = "auto"
     messages: list[OpenAIMessage] = Field(..., min_length=1)
     stream: Optional[bool] = False
+    search: Optional[Literal["auto", "on", "off"]] = "auto"
 
 
 class FeedbackRequest(BaseModel):
@@ -144,6 +150,7 @@ async def _execute_chat(
     message: str,
     force_model: Optional[str],
     auth: AuthContext,
+    search_mode: str = "auto",
 ) -> tuple:
     request_id = f"req_{uuid.uuid4().hex[:16]}"
 
@@ -166,7 +173,7 @@ async def _execute_chat(
         manual_expert(force_model)
 
     async with ConcurrencyGuard(auth.client_label):
-        result = await run_chat(message, force_model)
+        result = await run_chat(message, force_model, search_mode=search_mode)  # type: ignore[arg-type]
 
     row_id = log_interaction(
         query=message,
@@ -214,8 +221,10 @@ async def health():
 @app.get("/")
 async def root():
     return {
-        "product": "Aitotech NeuralRouter SaaS",
+        "product": "Aksh by Aitotech",
+        "model": "Omni",
         "docs": "/docs",
+        "roadmap": "/docs/AKSH_ROADMAP.md",
         "dashboard": "/web/dashboard/",
         "chat": "/web/chat.html",
     }
@@ -228,7 +237,7 @@ async def chat(
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
     rate_limit(request, auth)
-    result, row_id = await _execute_chat(body.message, body.force_model, auth)
+    result, row_id = await _execute_chat(body.message, body.force_model, auth, body.search or "auto")
     return ChatResponse(
         row_id=row_id,
         answer=result.answer,
@@ -237,6 +246,8 @@ async def chat(
         collaborative=result.collaborative,
         confidence=result.confidence,
         tokens_used=result.tokens,
+        web_search_used=result.web_search_used,
+        omni_controller=result.omni_plan,
     )
 
 
@@ -260,7 +271,7 @@ async def chat_completions(
         raise HTTPException(400, f"Message too long (max {MAX_MESSAGE_CHARS} chars)")
 
     force = _resolve_force_model(body.model)
-    result, _row_id = await _execute_chat(message, force, auth)
+    result, _row_id = await _execute_chat(message, force, auth, body.search or "auto")
 
     completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
     return {

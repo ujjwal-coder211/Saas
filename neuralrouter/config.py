@@ -48,8 +48,8 @@ CORS_ORIGINS = [
     if o.strip()
 ]
 
-APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "NeuralRouter API")
-APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "1.1.0-saas")
+APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "Aksh API")
+APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "0.2.0-aksh")
 
 # SaaS infrastructure
 DATABASE_URL = os.environ.get("DATABASE_URL", "")

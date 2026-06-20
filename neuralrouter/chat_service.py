@@ -1,4 +1,4 @@
-"""Core chat orchestration — shared by /v1/chat and /v1/chat/completions."""
+"""Core chat orchestration — Omni Controller → experts → answer."""
 
 from __future__ import annotations
 
@@ -6,14 +6,19 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
+from typing import Literal
 
 from omni_training.model_analyzer import analyze_model_behavior
 from omni_training.schema import ResponsePattern
 
 from neuralrouter.model_clients import call_model
-from neuralrouter.router import REGISTRY, activate_experts, confidence_for, manual_expert
+from neuralrouter.omni_controller import OmniPlan, apply_search_context, build_system_prompt, plan_turn
+from neuralrouter.router import REGISTRY, confidence_for
+from neuralrouter.search.web_search import aksh_search
 
 logger = logging.getLogger(__name__)
+
+SearchMode = Literal["auto", "on", "off"]
 
 
 @dataclass
@@ -29,6 +34,8 @@ class ChatResult:
     completion_tokens: int | None
     response_time_s: float
     sub_model_responses: list[dict] = field(default_factory=list)
+    omni_plan: dict | None = None
+    web_search_used: bool = False
 
 
 def _behavior_summary(model_id: str, expert_id: str, content: str) -> dict:
@@ -56,48 +63,43 @@ def _behavior_summary(model_id: str, expert_id: str, content: str) -> dict:
     }
 
 
-async def run_chat(message: str, force_model: str | None = None) -> ChatResult:
+async def _run_with_plan(plan: OmniPlan) -> ChatResult:
     start = time.time()
     sub_behaviors: list[dict] = []
-
-    if force_model:
-        experts = [manual_expert(force_model)]
-    else:
-        experts = activate_experts(message)
-
-    is_collaborative = len(experts) > 1
+    experts = plan.experts
     primary = experts[0]
     conf = confidence_for(primary)
 
     total_tokens = prompt_tokens = completion_tokens = None
+    system_prompt = build_system_prompt(plan)
+    user_message = plan.query
 
-    if not is_collaborative:
-        result = await call_model(message, primary.model_id)
+    if not plan.collaborative:
+        result = await call_model(user_message, primary.model_id, system_prompt=system_prompt)
         final_answer = result["content"]
         total_tokens = result.get("tokens")
         prompt_tokens = result.get("prompt_tokens")
         completion_tokens = result.get("completion_tokens")
-        sub_behaviors.append(
-            _behavior_summary(primary.model_id, primary.expert_id, final_answer)
-        )
+        sub_behaviors.append(_behavior_summary(primary.model_id, primary.expert_id, final_answer))
     else:
         capped = experts[:3]
         results = await asyncio.gather(
-            *[call_model(message, e.model_id) for e in capped],
+            *[
+                call_model(user_message, e.model_id, system_prompt=system_prompt)
+                for e in capped
+            ],
             return_exceptions=True,
         )
         parts = []
         for e, r in zip(capped, results):
             if isinstance(r, dict):
                 parts.append(r["content"])
-                sub_behaviors.append(
-                    _behavior_summary(e.model_id, e.expert_id, r["content"])
-                )
+                sub_behaviors.append(_behavior_summary(e.model_id, e.expert_id, r["content"]))
             else:
                 logger.error("Collaborative sub-call failed: %s", r)
 
         if not parts:
-            result = await call_model(message, "qwen")
+            result = await call_model(user_message, "qwen", system_prompt=system_prompt)
             final_answer = result["content"]
             total_tokens = result.get("tokens")
         else:
@@ -105,12 +107,10 @@ async def run_chat(message: str, force_model: str | None = None) -> ChatResult:
                 "Combine these expert answers into one clear, non-redundant response:\n\n"
                 + "\n\n---\n\n".join(parts)
             )
-            synthesis = await call_model(synthesis_prompt, "qwen")
+            synthesis = await call_model(synthesis_prompt, "qwen", system_prompt=system_prompt)
             final_answer = synthesis["content"]
             total_tokens = synthesis.get("tokens")
-            sub_behaviors.append(
-                _behavior_summary("qwen", "general-expert", final_answer)
-            )
+            sub_behaviors.append(_behavior_summary("qwen", "general-expert", final_answer))
 
     elapsed = round(time.time() - start, 2)
 
@@ -118,7 +118,7 @@ async def run_chat(message: str, force_model: str | None = None) -> ChatResult:
         answer=final_answer,
         brain_used=primary.model_id,
         all_experts_used=[e.model_id for e in experts],
-        collaborative=is_collaborative,
+        collaborative=plan.collaborative,
         confidence=conf,
         expert_id=primary.expert_id,
         tokens=total_tokens,
@@ -126,4 +126,27 @@ async def run_chat(message: str, force_model: str | None = None) -> ChatResult:
         completion_tokens=completion_tokens,
         response_time_s=elapsed,
         sub_model_responses=sub_behaviors,
+        omni_plan={
+            "reasoning": plan.reasoning,
+            "output_style": plan.output_style,
+            "search_mode": plan.search_mode,
+        },
+        web_search_used=bool(plan.search_context),
     )
+
+
+async def run_chat(
+    message: str,
+    force_model: str | None = None,
+    search_mode: SearchMode = "auto",
+) -> ChatResult:
+    plan = plan_turn(message, force_model=force_model, search_mode=search_mode)
+
+    if plan.use_web_search:
+        try:
+            search_result = await aksh_search(message)
+            plan = apply_search_context(plan, search_result)
+        except Exception:
+            logger.exception("Aksh Search failed — continuing without web context")
+
+    return await _run_with_plan(plan)

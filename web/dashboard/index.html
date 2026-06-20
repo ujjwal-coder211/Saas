@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aitotech NeuralRouter — Dashboard</title>
+  <title>Aksh — Dashboard | Aitotech</title>
   <style>
     :root { --bg:#0f1419; --card:#1a2332; --text:#e7ecf3; --muted:#8b9cb3; --accent:#3b82f6; --ok:#22c55e; }
     * { box-sizing: border-box; }
@@ -23,8 +23,8 @@
   </style>
 </head>
 <body>
-  <h1>NeuralRouter SaaS Dashboard</h1>
-  <p class="sub">API keys · usage · billing · <a href="/web/chat.html">Open chat</a> · <a href="/docs">API docs</a></p>
+  <h1>Aksh Dashboard</h1>
+  <p class="sub">Omni controller · API keys · usage · skills · <a href="/web/chat.html">Chat</a> · <a href="/docs">API</a></p>
 
   <div class="grid">
     <div class="card">
@@ -53,10 +53,20 @@
     </div>
 
     <div class="card">
-      <h2>Training opt-in</h2>
-      <p class="sub">Help improve Omni (anonymized). Default OFF for trust.</p>
+      <h2>Training opt-in (Omni)</h2>
+      <p class="sub">Default OFF — your data stays private.</p>
       <button class="secondary" onclick="setOptIn(true)">Enable opt-in</button>
       <button class="secondary" onclick="setOptIn(false)">Disable opt-in</button>
+    </div>
+
+    <div class="card">
+      <h2>Add Skill / MCP → Omni train</h2>
+      <label>Skill name</label>
+      <input id="skillName" placeholder="my-mcp-server" />
+      <label>Git URL (public repo)</label>
+      <input id="skillGit" placeholder="https://github.com/org/skill-repo" />
+      <button onclick="registerSkill()">Add &amp; ingest for training</button>
+      <p id="skillMsg" class="sub"></p>
     </div>
   </div>
 
@@ -130,6 +140,25 @@
         window.location.href = data.checkout_url;
       } catch (e) {
         alert('Stripe checkout: ' + e.message);
+      }
+    }
+
+    async function registerSkill() {
+      const name = document.getElementById('skillName').value.trim();
+      const git_url = document.getElementById('skillGit').value.trim();
+      if (!name || !git_url) {
+        document.getElementById('skillMsg').textContent = 'Name and Git URL required';
+        return;
+      }
+      try {
+        const data = await api('/saas/v1/skills/register', {
+          method: 'POST',
+          body: JSON.stringify({ name, git_url, skill_type: 'mcp' }),
+        });
+        document.getElementById('skillMsg').innerHTML =
+          '<span class="ok">Ingested: ' + data.training_rows_written + ' training rows. Run curate → build_dataset.</span>';
+      } catch (e) {
+        document.getElementById('skillMsg').textContent = e.message;
       }
     }
 
