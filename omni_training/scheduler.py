@@ -21,10 +21,17 @@ def check_and_report() -> dict:
     w = build_result.get("written", 0)
 
     if w >= TRAIN_THRESHOLDS["sft_round_2"]:
-        build_result["action"] = "run_colab_omni_v2_sft"
+        build_result["action"] = "run_colab_omni_sft"
         build_result["message"] = (
-            f"{w} rows. Upload vault/omni_v1_train.jsonl + omni_v1_research.jsonl to Colab."
+            f"{w} rows. Colab train → python omni_training/brain_register.py omni-vN ... "
+            "→ review → python brain_promote.py omni-vN --approve"
         )
+        build_result["brain_pipeline"] = {
+            "step_1": "Colab SFT on vault/omni_v1_train.jsonl",
+            "step_2": "brain_register.py (candidate)",
+            "step_3": "Your review + eval_score",
+            "step_4": "brain_promote.py (replaces active main brain)",
+        }
     elif w >= TRAIN_THRESHOLDS["manual_review"]:
         build_result["action"] = "manual_review_then_train"
         build_result["message"] = f"{w} rows — review research_report.json then train."

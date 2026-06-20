@@ -142,6 +142,44 @@ User adds skill/MCP
 | Web search | `neuralrouter/search/web_search.py` | Scaffold |
 | Skill ingest | `omni_training/skill_ingest.py` | Scaffold |
 | Skills API | `saas/api/skills.py` | Scaffold |
+| **Brain registry** | `omni_training/brain_registry.json` | Live |
+| **Brain promote** | `omni_training/brain_promote.py` | Live |
 | Roadmap | `docs/AKSH_ROADMAP.md` | This file |
 
 Execute order: wire controller into `chat_service.py` → enable search env → skills register endpoint → Web Studio UI.
+
+---
+
+## Omni brain versioning — train chalta rahe, brain replace jab ready
+
+Training **code/files se continuous** chalegi. Jab naya version train ho aur **aap approve** karo → **main brain hot-replace**.
+
+```
+Aksh logs + skills
+    → curate.py → build_dataset.py
+    → Colab SFT (omni-v2, omni-v3, …)
+    → brain_register.py   # status = candidate
+    → aap check (eval_score / manual)
+    → brain_promote.py    # candidate → active, purana → archived
+```
+
+| Status | Matlab |
+|--------|--------|
+| `active` | Abhi live main brain — har request |
+| `candidate` | Train ho gaya, approve pending |
+| `training` | Colab chal raha |
+| `archived` | Purana brain (rollback possible) |
+
+**Registry:** `omni_training/brain_registry.json`  
+**Abhi active:** `omni-rules-v0` (rules)  
+**Ready candidate:** `omni-v1` (HF LoRA — promote jab tum bolo)
+
+**CLI:**
+```powershell
+python omni_training/brain_register.py omni-v2 lora_hf --label "Omni v2" --adapter-repo YOU/repo --eval-score 0.85
+python omni_training/brain_promote.py omni-v2 --approve
+```
+
+**Admin API:** `GET /admin/omni/brain`, `POST /admin/omni/brain/promote` + `X-Omni-Admin-Key`
+
+Optional: `OMNI_INFERENCE_URL` — GPU par native Omni inference jab deploy ho.

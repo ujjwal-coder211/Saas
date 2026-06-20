@@ -369,6 +369,54 @@ async def stripe_webhook_endpoint(request: Request):
     return result
 
 
+@app.get("/admin/omni/brain")
+async def admin_omni_brain(
+    request: Request,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+    x_omni_admin_key: Annotated[str | None, Header()] = None,
+):
+    """List Omni brain versions — active, candidates, archived."""
+    rate_limit(request, auth)
+    if not verify_admin_key(x_omni_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
+    from omni_training.brain_registry import get_active_brain, list_versions, load_registry
+
+    reg = load_registry()
+    return {
+        "active_version_id": reg.get("active_version_id"),
+        "active": get_active_brain(),
+        "versions": list_versions(),
+    }
+
+
+class PromoteBrainRequest(BaseModel):
+    version_id: str
+    approve: bool = True
+    force: bool = False
+
+
+@app.post("/admin/omni/brain/promote")
+async def admin_promote_brain(
+    request: Request,
+    body: PromoteBrainRequest,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+    x_omni_admin_key: Annotated[str | None, Header()] = None,
+):
+    """Hot-replace active Omni main brain with trained candidate."""
+    rate_limit(request, auth)
+    if not verify_admin_key(x_omni_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
+    from omni_training.brain_registry import promote, update_metrics
+
+    try:
+        if body.approve:
+            update_metrics(body.version_id, {"manual_approved": True})
+        result = promote(body.version_id, force=body.force)
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return result
+
+
 @app.get("/admin/omni/stats")
 async def admin_omni_stats(
     request: Request,

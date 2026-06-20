@@ -13,6 +13,7 @@ from typing import Literal
 
 from neuralrouter.router import ExpertMatch, activate_experts, manual_expert
 from neuralrouter.search.web_search import SearchResult, needs_web_search
+from neuralrouter.omni_brain.loader import active_brain_summary, brain_directives_for_plan
 
 SearchMode = Literal["auto", "on", "off"]
 OutputStyle = Literal["code", "prose", "structured", "hinglish"]
@@ -31,6 +32,8 @@ class OmniPlan:
     system_directives: list[str] = field(default_factory=list)
     search_context: str = ""
     reasoning: str = ""
+    brain_version_id: str = "omni-rules-v0"
+    brain_type: str = "rules"
 
     @property
     def primary_model(self) -> str:
@@ -63,6 +66,10 @@ def plan_turn(
         "You are Aksh by Aitotech. Be accurate, concise, and helpful.",
         "If web search context is provided, prefer it for time-sensitive facts.",
     ]
+    brain_meta = active_brain_summary()
+    directives.extend(brain_directives_for_plan())
+    brain_id = brain_meta.get("version_id", "omni-rules-v0")
+    brain_type = brain_meta.get("type", "rules")
 
     if force_model:
         experts = [manual_expert(force_model)]
@@ -87,6 +94,8 @@ def plan_turn(
         reasoning += "; web_search=on"
         directives.append("Ground answers in Aksh Search results when relevant.")
 
+    reasoning = f"brain={brain_id}; " + reasoning
+
     return OmniPlan(
         query=query,
         experts=experts,
@@ -96,6 +105,8 @@ def plan_turn(
         collaborative=collaborative,
         system_directives=directives,
         reasoning=reasoning,
+        brain_version_id=brain_id,
+        brain_type=brain_type,
     )
 
 

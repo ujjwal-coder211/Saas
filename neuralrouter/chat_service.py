@@ -13,6 +13,7 @@ from omni_training.schema import ResponsePattern
 
 from neuralrouter.model_clients import call_model
 from neuralrouter.omni_controller import OmniPlan, apply_search_context, build_system_prompt, plan_turn
+from neuralrouter.omni_brain.loader import omni_native_plan_hint
 from neuralrouter.router import REGISTRY, confidence_for
 from neuralrouter.search.web_search import aksh_search
 
@@ -130,6 +131,8 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
             "reasoning": plan.reasoning,
             "output_style": plan.output_style,
             "search_mode": plan.search_mode,
+            "brain_version_id": plan.brain_version_id,
+            "brain_type": plan.brain_type,
         },
         web_search_used=bool(plan.search_context),
     )
@@ -141,6 +144,22 @@ async def run_chat(
     search_mode: SearchMode = "auto",
 ) -> ChatResult:
     plan = plan_turn(message, force_model=force_model, search_mode=search_mode)
+
+    hint = await omni_native_plan_hint(message)
+    if hint:
+        plan = OmniPlan(
+            query=plan.query,
+            experts=plan.experts,
+            use_web_search=plan.use_web_search,
+            search_mode=plan.search_mode,
+            output_style=plan.output_style,
+            collaborative=plan.collaborative,
+            system_directives=plan.system_directives + [hint],
+            search_context=plan.search_context,
+            reasoning=plan.reasoning + "; omni_inference_hint=on",
+            brain_version_id=plan.brain_version_id,
+            brain_type=plan.brain_type,
+        )
 
     if plan.use_web_search:
         try:
