@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cursor Connect — Aksh Omni</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0f1419; color:#e6edf3; padding:24px; max-width:720px; line-height:1.7; }
+    a { color:#58a6ff; }
+    code, pre { background:#161b22; border-radius:6px; }
+    pre { padding:12px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <a href="/web/docs/">← Docs</a>
+  <h1>Connect Cursor to Aksh (Omni)</h1>
+  <ol>
+    <li>Cursor → Settings → Models → OpenAI-compatible</li>
+    <li>Base URL: <code>https://api.aksh.aitotech.in/v1</code> (local: <code>http://127.0.0.1:8000/v1</code>)</li>
+    <li>API Key: Dashboard se copy karo</li>
+    <li>Model name: <code>omni</code> (ya <code>auto</code> — same routing)</li>
+  </ol>
+  <p>User ko sirf <strong>Omni</strong> dikhega. Backend experts hidden hain.</p>
+  <h2>Test</h2>
+  <pre>curl -X POST http://127.0.0.1:8000/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"omni","messages":[{"role":"user","content":"Hello"}]}'</pre>
+</body>
+</html>

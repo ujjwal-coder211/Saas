@@ -20,6 +20,7 @@ from neuralrouter.search.web_search import aksh_search
 logger = logging.getLogger(__name__)
 
 SearchMode = Literal["auto", "on", "off"]
+PUBLIC_MODEL_ID = "omni"
 
 
 @dataclass
@@ -114,11 +115,12 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
             sub_behaviors.append(_behavior_summary("qwen", "general-expert", final_answer))
 
     elapsed = round(time.time() - start, 2)
+    internal_experts = [e.model_id for e in experts]
 
     return ChatResult(
         answer=final_answer,
-        brain_used=primary.model_id,
-        all_experts_used=[e.model_id for e in experts],
+        brain_used=PUBLIC_MODEL_ID,
+        all_experts_used=internal_experts,
         collaborative=plan.collaborative,
         confidence=conf,
         expert_id=primary.expert_id,
@@ -144,8 +146,16 @@ async def run_chat(
     search_mode: SearchMode = "auto",
     file_context: str | None = None,
     rules: str | None = None,
+    history: list[dict] | None = None,
 ) -> ChatResult:
     enriched = message
+    if history:
+        lines = []
+        for h in history[-20:]:
+            role = h.get("role", "user").upper()
+            lines.append(f"{role}: {h.get('content', '')}")
+        if lines:
+            enriched = "Previous conversation:\n" + "\n".join(lines) + "\n\nCurrent message:\n" + message
     if file_context:
         enriched = f"@file context:\n{file_context.strip()}\n\nUser message:\n{message}"
     if rules:

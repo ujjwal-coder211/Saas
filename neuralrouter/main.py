@@ -22,6 +22,7 @@ from typing import Annotated, Literal, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
@@ -45,7 +46,10 @@ from saas.billing.usage import QuotaExceededError, check_quota, record_usage
 from saas.billing.stripe_webhooks import handle_webhook
 from saas.api.routes import router as saas_router
 from saas.api.skills import router as skills_router
+from saas.api.threads import router as threads_router, load_thread_history, save_chat_turn
+from saas.api.projects import router as projects_router
 from saas.db.connection import saas_db_enabled
+from neuralrouter.chat_service import PUBLIC_MODEL_ID
 
 sys.path.insert(0, str(ROOT_DIR))
 from omni_training.logger import log_interaction, record_feedback  # noqa: E402
@@ -67,6 +71,8 @@ if CORS_ORIGINS:
 
 app.include_router(saas_router)
 app.include_router(skills_router)
+app.include_router(threads_router)
+app.include_router(projects_router)
 
 _web_dir = ROOT_DIR / "web"
 if _web_dir.exists():
@@ -86,6 +92,8 @@ async def security_headers(request: Request, call_next):
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=MAX_MESSAGE_CHARS)
     force_model: Optional[str] = None
+    thread_id: Optional[str] = None
+    project_id: Optional[str] = None
     search: Optional[Literal["auto", "on", "off"]] = "auto"
     file_context: Optional[str] = Field(default=None, max_length=MAX_MESSAGE_CHARS)
     rules: Optional[str] = Field(default=None, max_length=8000)
@@ -99,8 +107,9 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     row_id: str
     answer: str
-    brain_used: str
-    all_experts_used: list[str]
+    brain_used: str = PUBLIC_MODEL_ID
+    powered_by: str = "omni"
+    thread_id: Optional[str] = None
     collaborative: bool
     confidence: float
     tokens_used: Optional[int] = None
@@ -147,7 +156,15 @@ def _messages_to_query(messages: list[OpenAIMessage]) -> str:
 
 
 def _resolve_force_model(model: str) -> Optional[str]:
-    if model in ("auto", "neuralrouter-auto", "default", "gpt-4", "gpt-4o"):
+    if model in (
+        "auto",
+        "omni",
+        "aksh-omni",
+        "neuralrouter-auto",
+        "default",
+        "gpt-4",
+        "gpt-4o",
+    ):
         return None
     if model in REGISTRY:
         return model
@@ -167,6 +184,7 @@ async def _execute_chat(
     search_mode: str = "auto",
     file_context: str | None = None,
     rules: str | None = None,
+    thread_id: str | None = None,
 ) -> tuple:
     request_id = f"req_{uuid.uuid4().hex[:16]}"
 
@@ -188,6 +206,15 @@ async def _execute_chat(
     if force_model:
         manual_expert(force_model)
 
+    history = None
+    if thread_id and auth.user_id and saas_db_enabled():
+        try:
+            history = load_thread_history(thread_id, auth.user_id)
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Failed to load thread history")
+
     async with ConcurrencyGuard(auth.client_label):
         result = await run_chat(
             message,
@@ -195,6 +222,7 @@ async def _execute_chat(
             search_mode=search_mode,  # type: ignore[arg-type]
             file_context=file_context,
             rules=rules,
+            history=history,
         )
 
     row_id = log_interaction(
@@ -217,12 +245,25 @@ async def _execute_chat(
             user_id=auth.user_id,
             api_key_id=auth.api_key_id,
             request_id=request_id,
-            model_used=result.brain_used,
+            model_used=PUBLIC_MODEL_ID,
             expert_id=result.expert_id,
             tokens_input=result.prompt_tokens or 0,
             tokens_output=result.completion_tokens or 0,
             latency_ms=int(result.response_time_s * 1000),
         )
+
+    if thread_id and auth.user_id and saas_db_enabled():
+        try:
+            save_chat_turn(
+                thread_id,
+                auth.user_id,
+                message,
+                result.answer,
+                row_id=row_id,
+                tokens=result.tokens or 0,
+            )
+        except Exception:
+            logger.exception("Failed to save thread messages")
 
     return result, row_id
 
@@ -253,14 +294,20 @@ async def health():
 
 @app.get("/")
 async def root():
+    return RedirectResponse(url="/web/index.html")
+
+
+@app.get("/api")
+async def api_info():
     return {
         "product": "Aksh by Aitotech",
-        "model": "Omni",
+        "model": PUBLIC_MODEL_ID,
         "docs": "/docs",
-        "roadmap": "/docs/AKSH_ROADMAP.md",
+        "user_docs": "/web/docs/",
+        "landing": "/web/index.html",
         "dashboard": "/web/dashboard/",
-        "chat": "/web/chat.html",
         "studio": "/web/studio/",
+        "chat": "/web/chat.html",
     }
 
 
@@ -278,12 +325,14 @@ async def chat(
         body.search or "auto",
         file_context=body.file_context,
         rules=body.rules,
+        thread_id=body.thread_id,
     )
     return ChatResponse(
         row_id=row_id,
         answer=result.answer,
-        brain_used=result.brain_used,
-        all_experts_used=result.all_experts_used,
+        brain_used=PUBLIC_MODEL_ID,
+        powered_by="omni",
+        thread_id=body.thread_id,
         collaborative=result.collaborative,
         confidence=result.confidence,
         tokens_used=result.tokens,
@@ -319,7 +368,7 @@ async def chat_completions(
         "id": completion_id,
         "object": "chat.completion",
         "created": int(time.time()),
-        "model": body.model if body.model != "auto" else result.brain_used,
+        "model": PUBLIC_MODEL_ID,
         "choices": [
             {
                 "index": 0,
@@ -332,7 +381,7 @@ async def chat_completions(
             "completion_tokens": result.completion_tokens or 0,
             "total_tokens": result.tokens or 0,
         },
-        "system_fingerprint": f"neuralrouter-{result.brain_used}",
+        "system_fingerprint": f"aksh-omni-{result.omni_plan.get('brain_version_id') if result.omni_plan else 'v0'}",
     }
 
 
@@ -345,21 +394,18 @@ async def list_models(
     created = int(time.time())
     data = [
         {
+            "id": PUBLIC_MODEL_ID,
+            "object": "model",
+            "created": created,
+            "owned_by": "aitotech",
+        },
+        {
             "id": "auto",
             "object": "model",
             "created": created,
             "owned_by": "aitotech",
-        }
+        },
     ]
-    for mid, meta in REGISTRY.items():
-        data.append(
-            {
-                "id": mid,
-                "object": "model",
-                "created": created,
-                "owned_by": meta.get("provider", "aitotech"),
-            }
-        )
     return {"object": "list", "data": data}
 
 

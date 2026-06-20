@@ -57,13 +57,16 @@
 <body>
   <header>
     <h1>⚡ Aksh Chat</h1>
-    <p>Omni controller · Aksh Search · <a href="/web/dashboard/">Dashboard</a> · <a href="/web/studio/">Studio</a></p>
+    <p>Omni · Aksh Search · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/dashboard/">Dashboard</a> · <a href="/web/studio/">Studio</a></p>
   </header>
   <div id="config">
     <label>API URL</label>
     <input id="apiUrl" value="http://127.0.0.1:8000" />
     <label>API Key</label>
-    <input id="apiKey" type="password" placeholder="nr_..." />
+    <input id="apiKey" type="password" placeholder="sk_..." />
+    <label>Thread</label>
+    <select id="threadSelect" style="min-width:140px"><option value="">New thread</option></select>
+    <button type="button" class="secondary" onclick="newThread()">+ Thread</button>
     <label>Search</label>
     <select id="searchMode">
       <option value="auto">Auto</option>
@@ -88,7 +91,9 @@
     const apiUrl = document.getElementById('apiUrl');
     const apiKey = document.getElementById('apiKey');
     const searchMode = document.getElementById('searchMode');
+    const threadSelect = document.getElementById('threadSelect');
     let uiMode = 'chat';
+    let threadId = localStorage.getItem('aksh_chat_thread') || '';
 
     apiUrl.value = localStorage.getItem('nr_url') || apiUrl.value;
     apiKey.value = localStorage.getItem('nr_key') || '';
@@ -106,6 +111,54 @@
       document.getElementById('tabChat').classList.toggle('tab-active', mode === 'chat');
       document.getElementById('tabAgent').classList.toggle('tab-active', mode === 'agent');
     }
+
+    async function loadThreads() {
+      const base = (localStorage.getItem('nr_url') || apiUrl.value).replace(/\/$/, '');
+      const key = localStorage.getItem('nr_key') || apiKey.value;
+      try {
+        const res = await fetch(base + '/saas/v1/threads', { headers: { Authorization: 'Bearer ' + key } });
+        if (!res.ok) return;
+        const data = await res.json();
+        threadSelect.innerHTML = '<option value="">New thread</option>';
+        (data.threads || []).forEach(t => {
+          const o = document.createElement('option');
+          o.value = t.id; o.textContent = (t.title || 'Chat').slice(0, 30);
+          if (t.id === threadId) o.selected = true;
+          threadSelect.appendChild(o);
+        });
+      } catch (_) {}
+    }
+
+    async function newThread() {
+      const base = (localStorage.getItem('nr_url') || apiUrl.value).replace(/\/$/, '');
+      const key = localStorage.getItem('nr_key') || apiKey.value;
+      const res = await fetch(base + '/saas/v1/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+        body: JSON.stringify({ title: 'Chat ' + new Date().toLocaleDateString() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        threadId = data.id;
+        localStorage.setItem('aksh_chat_thread', threadId);
+        msgs.innerHTML = '';
+        await loadThreads();
+      }
+    }
+
+    threadSelect.onchange = async () => {
+      threadId = threadSelect.value;
+      localStorage.setItem('aksh_chat_thread', threadId);
+      if (!threadId) { msgs.innerHTML = ''; return; }
+      const base = (localStorage.getItem('nr_url') || apiUrl.value).replace(/\/$/, '');
+      const key = localStorage.getItem('nr_key') || apiKey.value;
+      const res = await fetch(base + '/saas/v1/threads/' + threadId + '/messages', { headers: { Authorization: 'Bearer ' + key } });
+      const data = await res.json();
+      msgs.innerHTML = '';
+      (data.messages || []).forEach(m => add(m.role === 'user' ? 'user' : 'bot', m.content));
+    };
+
+    loadThreads();
 
     function add(role, text, meta) {
       const d = document.createElement('div');
@@ -143,7 +196,7 @@
       const search = localStorage.getItem('aksh_search_mode') || searchMode.value;
       try {
         const path = uiMode === 'agent' ? '/v1/agent/run' : '/v1/chat';
-        const body = uiMode === 'agent' ? { task: q } : { message: q, search };
+        const body = uiMode === 'agent' ? { task: q } : { message: q, search, thread_id: threadId || undefined };
         const res = await fetch(base + path, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -154,11 +207,10 @@
         const metaParts = uiMode === 'agent'
           ? ['Agent', 'tools: ' + (data.tools_used || []).join(', ')]
           : [
-              'Brain: ' + data.brain_used,
+              'Omni',
               'search: ' + (data.web_search_used ? 'used' : 'no'),
-              'confidence: ' + ((data.confidence || 0) * 100).toFixed(0) + '%',
-              'row: ' + data.row_id
-            ];
+              data.thread_id ? 'thread saved' : ''
+            ].filter(Boolean);
         add('bot', data.answer, metaParts.join(' · '));
         if (uiMode === 'chat' && data.row_id) {
           const bar = document.createElement('div');

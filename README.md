@@ -9,7 +9,9 @@ Aitotech (company)
 ```
 
 Full roadmap: [docs/AKSH_ROADMAP.md](docs/AKSH_ROADMAP.md)  
-Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
+**User guide:** [README_USER.md](README_USER.md) · [docs/USER_CHECKLIST.md](docs/USER_CHECKLIST.md)  
+**Web docs:** `/web/docs/` · **Landing:** `/web/index.html`  
+Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · E2E: [docs/E2E_DEPLOY.md](docs/E2E_DEPLOY.md) · Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
 
 ## Stack
 
@@ -31,6 +33,8 @@ docker compose up --build
 ```
 
 - Dashboard: http://localhost:8000/web/dashboard/
+- **Landing:** http://localhost:8000/web/index.html
+- **Docs:** http://localhost:8000/web/docs/
 - Chat: http://localhost:8000/web/chat.html
 - Studio: http://localhost:8000/web/studio/
 
