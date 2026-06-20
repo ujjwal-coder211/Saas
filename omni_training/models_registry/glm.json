@@ -1,0 +1,23 @@
+{
+  "model_id": "glm",
+  "display_name": "GLM 5.2",
+  "provider": "Z.ai / OpenRouter",
+  "api_model_string": "zhipu/glm-5.2",
+  "architecture_family": "MoE",
+  "total_params_b": 744,
+  "active_params_b": 40,
+  "context_window": 1000000,
+  "max_tokens": 8192,
+  "specialty_domains": ["repo-level coding", "agentic engineering", "huge context analysis"],
+  "sub_experts": [
+    {"id": "repo-expert", "name": "Repo-level Understanding", "keywords": ["repository", "codebase", "entire project", "whole repo"]},
+    {"id": "longctx-expert", "name": "Huge Context Analysis", "keywords": ["large file", "long document", "huge context", "1 million token"]},
+    {"id": "refactor-expert", "name": "Refactoring/Architecture", "keywords": ["refactor", "architecture review", "redesign"]}
+  ],
+  "response_style": {
+    "typical_format": "multi-file aware, architectural reasoning",
+    "avg_temperature_used": 0.3,
+    "tends_to": "consider cross-file dependencies, longer planning before code"
+  },
+  "notes": "Metadata only — for routing and Omni pattern learning."
+}

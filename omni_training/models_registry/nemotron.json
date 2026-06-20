@@ -1,0 +1,23 @@
+{
+  "model_id": "nemotron",
+  "display_name": "Nemotron 3 Ultra",
+  "provider": "OpenRouter / DeepInfra",
+  "api_model_string": "nvidia/nemotron-3-ultra-550b",
+  "architecture_family": "MoE (Mixture of Experts)",
+  "total_params_b": 550,
+  "active_params_b": 55,
+  "context_window": 1000000,
+  "max_tokens": 4096,
+  "specialty_domains": ["reasoning", "mathematics", "science", "logic"],
+  "sub_experts": [
+    {"id": "math-expert", "name": "Mathematics", "keywords": ["calculate", "equation", "solve", "formula", "algebra", "calculus", "गणित", "हिसाब"]},
+    {"id": "physics-expert", "name": "Physics/Science", "keywords": ["physics", "chemistry", "biology", "science", "experiment"]},
+    {"id": "logic-expert", "name": "Logic/Proof", "keywords": ["prove", "logic", "theorem", "deduce", "तर्क"]}
+  ],
+  "response_style": {
+    "typical_format": "step-by-step chain-of-thought",
+    "avg_temperature_used": 0.3,
+    "tends_to": "show working, derive formulas, structured reasoning blocks"
+  },
+  "notes": "API brain for NeuralRouter. Separate from Omni v1 LoRA (Nemotron Nano 30B)."
+}

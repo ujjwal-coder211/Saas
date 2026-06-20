@@ -1,0 +1,23 @@
+{
+  "model_id": "kimi",
+  "display_name": "Kimi K2.6",
+  "provider": "Moonshot AI / OpenRouter",
+  "api_model_string": "moonshotai/kimi-k2.6",
+  "architecture_family": "MoE (MLA attention)",
+  "total_params_b": 1000,
+  "active_params_b": 32,
+  "context_window": 262000,
+  "max_tokens": 8192,
+  "specialty_domains": ["agentic tasks", "research", "long-horizon planning"],
+  "sub_experts": [
+    {"id": "research-expert", "name": "Deep Research", "keywords": ["research", "investigate", "find all", "sources"]},
+    {"id": "planning-expert", "name": "Strategy/Planning", "keywords": ["plan", "strategy", "roadmap", "step by step"]},
+    {"id": "agent-expert", "name": "Autonomous Agent", "keywords": ["agent", "workflow", "automate", "multi-step task"]}
+  ],
+  "response_style": {
+    "typical_format": "structured multi-section reports",
+    "avg_temperature_used": 0.5,
+    "tends_to": "break tasks into subtasks, cite multiple angles, longer outputs"
+  },
+  "notes": "Metadata only — for routing and Omni pattern learning."
+}

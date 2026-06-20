@@ -1,0 +1,23 @@
+{
+  "model_id": "qwen",
+  "display_name": "Qwen3-235B",
+  "provider": "Alibaba / DeepInfra",
+  "api_model_string": "Qwen/Qwen3-235B-A22B",
+  "architecture_family": "MoE",
+  "total_params_b": 235,
+  "active_params_b": 22,
+  "context_window": 128000,
+  "max_tokens": 4096,
+  "specialty_domains": ["Hindi/Urdu", "multilingual", "creative writing", "general knowledge"],
+  "sub_experts": [
+    {"id": "hindi-expert", "name": "Hindi/Urdu Language", "keywords": ["हिंदी", "hindi", "urdu", "बताओ", "समझाओ", "मुझे", "क्या", "कैसे"]},
+    {"id": "creative-expert", "name": "Creative Writing", "keywords": ["story", "essay", "poem", "creative", "write"]},
+    {"id": "general-expert", "name": "General Knowledge", "keywords": ["explain", "describe", "translate", "अनुवाद"]}
+  ],
+  "response_style": {
+    "typical_format": "conversational prose",
+    "avg_temperature_used": 0.7,
+    "tends_to": "natural Hindi/Hinglish phrasing, friendly tone, examples"
+  },
+  "notes": "Default fallback brain when no keywords match."
+}

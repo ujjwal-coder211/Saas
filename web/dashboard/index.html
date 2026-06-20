@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aitotech NeuralRouter — Dashboard</title>
+  <style>
+    :root { --bg:#0f1419; --card:#1a2332; --text:#e7ecf3; --muted:#8b9cb3; --accent:#3b82f6; --ok:#22c55e; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    .sub { color: var(--muted); margin-bottom: 24px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid #2a3548; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    input, button { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: var(--text); }
+    button { background: var(--accent); border: none; cursor: pointer; font-weight: 600; margin-top: 8px; }
+    button.secondary { background: #334155; }
+    .stat { font-size: 1.8rem; font-weight: 700; }
+    .ok { color: var(--ok); }
+    pre { background: #0f172a; padding: 12px; border-radius: 8px; overflow: auto; font-size: 0.75rem; max-height: 240px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>NeuralRouter SaaS Dashboard</h1>
+  <p class="sub">API keys · usage · billing · <a href="/web/chat.html">Open chat</a> · <a href="/docs">API docs</a></p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Connect</h2>
+      <label>API Base URL</label>
+      <input id="baseUrl" value="" />
+      <label>API Key (Bearer)</label>
+      <input id="apiKey" type="password" placeholder="sk_live_..." />
+      <button onclick="saveAndLoad()">Save &amp; Load usage</button>
+    </div>
+
+    <div class="card">
+      <h2>Signup (MVP)</h2>
+      <label>Email</label>
+      <input id="signupEmail" type="email" placeholder="dev@example.com" />
+      <button onclick="signup()">Create free account</button>
+      <p id="signupMsg" class="sub"></p>
+    </div>
+
+    <div class="card">
+      <h2>Usage this month</h2>
+      <div class="stat" id="tokensUsed">—</div>
+      <p class="sub" id="planInfo">Plan: —</p>
+      <button class="secondary" onclick="loadUsage()">Refresh</button>
+      <button onclick="upgradePro()">Upgrade to Pro (Stripe)</button>
+    </div>
+
+    <div class="card">
+      <h2>Training opt-in</h2>
+      <p class="sub">Help improve Omni (anonymized). Default OFF for trust.</p>
+      <button class="secondary" onclick="setOptIn(true)">Enable opt-in</button>
+      <button class="secondary" onclick="setOptIn(false)">Disable opt-in</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Recent requests</h2>
+    <pre id="recent">Load usage to see data.</pre>
+  </div>
+
+  <script>
+    const base = () => document.getElementById('baseUrl').value.replace(/\/$/, '');
+    const key = () => document.getElementById('apiKey').value.trim();
+
+    document.getElementById('baseUrl').value = window.location.origin;
+
+    function saveAndLoad() {
+      localStorage.setItem('nr_base', base());
+      localStorage.setItem('nr_key', key());
+      loadUsage();
+    }
+
+    async function api(path, opts = {}) {
+      const r = await fetch(base() + path, {
+        ...opts,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + key(),
+          ...(opts.headers || {}),
+        },
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+      return data;
+    }
+
+    async function loadUsage() {
+      try {
+        const u = await api('/saas/v1/usage');
+        document.getElementById('tokensUsed').textContent =
+          (u.tokens_used || 0).toLocaleString() +
+          (u.tokens_limit ? ' / ' + u.tokens_limit.toLocaleString() : '');
+        document.getElementById('planInfo').textContent =
+          'Plan: ' + (u.plan_name || u.plan_id) + ' · Requests: ' + (u.requests_count || 0);
+        document.getElementById('recent').textContent = JSON.stringify(u.recent_events || [], null, 2);
+      } catch (e) {
+        document.getElementById('recent').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function signup() {
+      const email = document.getElementById('signupEmail').value;
+      try {
+        const r = await fetch(base() + '/saas/v1/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, plan_id: 'free' }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+        document.getElementById('apiKey').value = data.api_key;
+        document.getElementById('signupMsg').innerHTML =
+          '<span class="ok">Account created. API key saved above — copy now!</span>';
+        saveAndLoad();
+      } catch (e) {
+        document.getElementById('signupMsg').textContent = e.message;
+      }
+    }
+
+    async function upgradePro() {
+      try {
+        const data = await api('/saas/v1/checkout-session?plan_id=pro', { method: 'POST' });
+        window.location.href = data.checkout_url;
+      } catch (e) {
+        alert('Stripe checkout: ' + e.message);
+      }
+    }
+
+    async function setOptIn(enabled) {
+      try {
+        await api('/saas/v1/training-opt-in', {
+          method: 'PATCH',
+          body: JSON.stringify({ enabled }),
+        });
+        alert('Training opt-in: ' + enabled);
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    const savedBase = localStorage.getItem('nr_base');
+    const savedKey = localStorage.getItem('nr_key');
+    if (savedBase) document.getElementById('baseUrl').value = savedBase;
+    if (savedKey) {
+      document.getElementById('apiKey').value = savedKey;
+      loadUsage();
+    }
+  </script>
+</body>
+</html>

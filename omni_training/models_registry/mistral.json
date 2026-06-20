@@ -1,0 +1,24 @@
+{
+  "model_id": "mistral",
+  "display_name": "Mistral Large 3",
+  "provider": "Mistral AI / OpenRouter",
+  "api_model_string": "mistralai/mistral-large-latest",
+  "architecture_family": "Granular MoE",
+  "total_params_b": 675,
+  "active_params_b": 39,
+  "context_window": 256000,
+  "max_tokens": 4096,
+  "specialty_domains": ["coding", "tool use", "function calling"],
+  "sub_experts": [
+    {"id": "python-expert", "name": "Python/Backend", "keywords": ["python", "django", "fastapi", "backend"]},
+    {"id": "frontend-expert", "name": "Frontend/React", "keywords": ["react", "html", "css", "javascript", "frontend", "ui"]},
+    {"id": "debug-expert", "name": "Debugging", "keywords": ["debug", "error", "bug", "fix this", "not working"]},
+    {"id": "tooluse-expert", "name": "Function/Tool Calling", "keywords": ["api", "function", "tool", "integration"]}
+  ],
+  "response_style": {
+    "typical_format": "code blocks with brief explanation",
+    "avg_temperature_used": 0.2,
+    "tends_to": "minimal prose, precise syntax, inline comments"
+  },
+  "notes": "Metadata only — for routing and Omni pattern learning."
+}

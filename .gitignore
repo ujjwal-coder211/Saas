@@ -1,0 +1,14 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+omni_training/data/*.jsonl
+omni_training/data/vault/
+!omni_training/data/.gitkeep
+
+.DS_Store
+Thumbs.db

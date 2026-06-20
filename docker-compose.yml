@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aitotech
+      POSTGRES_PASSWORD: aitotech_dev
+      POSTGRES_DB: neuralrouter
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./saas/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aitotech -d neuralrouter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://aitotech:aitotech_dev@postgres:5432/neuralrouter
+      REDIS_URL: redis://redis:6379/0
+      SAAS_ALLOW_PUBLIC_SIGNUP: "true"
+      NEURALROUTER_CORS_ORIGINS: "http://localhost:8000,http://127.0.0.1:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - omni_vault:/app/omni_training/data/vault
+
+volumes:
+  pgdata:
+  omni_vault:
