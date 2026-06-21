@@ -381,14 +381,23 @@ async def public_chat(
         raise HTTPException(503, "Omni providers are not configured (OPENROUTER_API_KEY).")
 
     work_mode: WorkMode = "ship" if body.agent_type.lower() == "aksh" else "auto"
-    result, _row_id = await _execute_chat(
-        body.message.strip(),
-        None,
-        auth,
-        search_mode="auto",
-        rules=_agent_rules(body.agent_type),
-        work_mode=work_mode,
-    )
+    try:
+        result, _row_id = await _execute_chat(
+            body.message.strip(),
+            None,
+            auth,
+            search_mode="auto",
+            rules=_agent_rules(body.agent_type),
+            work_mode=work_mode,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("public_chat failed")
+        raise HTTPException(
+            503,
+            detail=f"Omni is temporarily unavailable. Check OpenRouter credits and API keys. ({type(exc).__name__})",
+        ) from exc
 
     agent_label = "Omni" if body.agent_type.lower() == "aksh" else "AitoTech AI"
     return {

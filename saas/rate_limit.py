@@ -41,20 +41,25 @@ def rate_limit(request: Request, auth: AuthContext) -> None:
     r = _get_redis()
 
     if r:
-        pipe = r.pipeline()
-        now = int(time.time())
-        window = now - 60
-        pipe.zremrangebyscore(key, 0, window)
-        pipe.zadd(key, {str(now): now})
-        pipe.zcard(key)
-        pipe.expire(key, 120)
-        _, _, count, _ = pipe.execute()
-        if count > limit:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Rate limit exceeded. Upgrade plan or wait.",
-            )
-        return
+        try:
+            pipe = r.pipeline()
+            now = int(time.time())
+            window = now - 60
+            pipe.zremrangebyscore(key, 0, window)
+            pipe.zadd(key, {str(now): now})
+            pipe.zcard(key)
+            pipe.expire(key, 120)
+            _, _, count, _ = pipe.execute()
+            if count > limit:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Rate limit exceeded. Upgrade plan or wait.",
+                )
+            return
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.warning("Redis rate limit failed, using memory: %s", exc)
 
     # In-memory fallback
     now_f = time.time()
