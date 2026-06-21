@@ -63,3 +63,12 @@ SAAS_ALLOW_PUBLIC_SIGNUP = os.environ.get("SAAS_ALLOW_PUBLIC_SIGNUP", "").lower(
     "true",
     "yes",
 )
+
+# Website / agents proxy — POST /public/chat (no Bearer key; rate-limited)
+PUBLIC_DEMO_ENABLED = os.environ.get("PUBLIC_DEMO_ENABLED", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+PUBLIC_DEMO_RATE_LIMIT = int(os.environ.get("PUBLIC_DEMO_RATE_LIMIT", "20"))
+AGENTS_API_KEY = os.environ.get("AGENTS_API_KEY", "")

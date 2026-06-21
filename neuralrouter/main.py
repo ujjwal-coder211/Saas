@@ -7,11 +7,13 @@ Endpoints:
   GET  /v1/models            — OpenAI-compatible model list
   POST /v1/feedback          — user feedback → Omni Training Program
   GET  /health               — health check (no auth)
+  POST /public/chat          — website demo + sales widget (rate-limited, no Bearer)
   /saas/v1/*                 — billing, usage, API keys (see saas/api/routes.py)
 """
 
 from __future__ import annotations
 
+import hmac
 import logging
 import sys
 import time
@@ -32,12 +34,16 @@ from neuralrouter.auth import verify_auth
 from saas.auth.context import AuthContext
 from neuralrouter.chat_service import run_chat
 from neuralrouter.config import (
+    AGENTS_API_KEY,
     APP_NAME,
     APP_VERSION,
     CORS_ORIGINS,
     MAX_MESSAGE_CHARS,
+    PUBLIC_DEMO_ENABLED,
+    PUBLIC_DEMO_RATE_LIMIT,
     ROOT_DIR,
 )
+from saas.billing.plans import get_plan
 from saas.rate_limit import rate_limit
 from neuralrouter.router import REGISTRY, manual_expert
 from neuralrouter.concurrency import ConcurrencyGuard, active_users_summary
@@ -72,7 +78,7 @@ if CORS_ORIGINS:
         allow_origins=CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Omni-Admin-Key", "Stripe-Signature"],
+        allow_headers=["Authorization", "Content-Type", "X-Omni-Admin-Key", "Stripe-Signature", "X-Agents-Key"],
     )
 
 app.include_router(saas_router)
@@ -136,6 +142,11 @@ class OpenAIChatRequest(BaseModel):
     stream: Optional[bool] = False
     search: Optional[Literal["auto", "on", "off"]] = "auto"
     work_mode: WorkMode = "auto"
+
+
+class PublicChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+    agent_type: str = Field(default="sales", max_length=32)
 
 
 class FeedbackRequest(BaseModel):
@@ -307,6 +318,77 @@ async def health():
         "search": search,
         "load": active_users_summary(),
         "provider_circuits": balancer.status(),
+        "public_demo": PUBLIC_DEMO_ENABLED,
+    }
+
+
+def _public_demo_auth(client_label: str) -> AuthContext:
+    plan = get_plan("free")
+    return AuthContext(
+        user_id=None,
+        api_key_id=None,
+        plan_id="free",
+        client_label=client_label,
+        rate_limit_per_minute=PUBLIC_DEMO_RATE_LIMIT,
+        max_concurrent=2,
+        training_opt_in=False,
+    )
+
+
+def _agent_rules(agent_type: str) -> str | None:
+    kind = (agent_type or "sales").lower().strip()
+    if kind == "aksh":
+        return (
+            "You are Omni inside Aksh Studio on aitotech.in. "
+            "Answer in simple English. Be concise. Focus on coding, building apps, and how Aksh helps developers in India."
+        )
+    if kind == "support":
+        return "You are AitoTech support. Help with Aksh, billing, and aitotech.in. Simple English."
+    return "You are AitoTech sales. Help visitors understand Aksh and AitoTech services. Simple English."
+
+
+@app.post("/public/chat")
+async def public_chat(
+    request: Request,
+    body: PublicChatRequest,
+    x_agents_key: Annotated[str | None, Header(alias="X-Agents-Key")] = None,
+):
+    """
+    Public endpoint for aitotech.in — proxied via Vercel /api/agent-chat.
+    Enable with PUBLIC_DEMO_ENABLED=true. Optional shared secret: AGENTS_API_KEY.
+    """
+    if not PUBLIC_DEMO_ENABLED:
+        raise HTTPException(503, "Public demo is not enabled on this server.")
+
+    if AGENTS_API_KEY:
+        if not x_agents_key or not hmac.compare_digest(x_agents_key, AGENTS_API_KEY):
+            raise HTTPException(401, "Invalid agents key.")
+
+    client_ip = request.client.host if request.client else "unknown"
+    auth = _public_demo_auth(f"website-public:{client_ip}")
+    rate_limit(request, auth)
+
+    from neuralrouter.model_clients import provider_configured
+
+    if not provider_configured():
+        raise HTTPException(503, "Omni providers are not configured (OPENROUTER_API_KEY).")
+
+    work_mode: WorkMode = "ship" if body.agent_type.lower() == "aksh" else "auto"
+    result, _row_id = await _execute_chat(
+        body.message.strip(),
+        None,
+        auth,
+        search_mode="auto",
+        rules=_agent_rules(body.agent_type),
+        work_mode=work_mode,
+    )
+
+    agent_label = "Omni" if body.agent_type.lower() == "aksh" else "AitoTech AI"
+    return {
+        "agent": agent_label,
+        "answer": result.answer,
+        "collaborative": result.collaborative,
+        "experts_used": result.all_experts_used,
     }
 
 
