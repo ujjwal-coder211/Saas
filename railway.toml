@@ -1,0 +1,12 @@
+# Railway reads this file from the repo root (not deploy/railway.toml).
+# Do NOT set a custom start command in the Railway dashboard — it breaks $PORT.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "/app/scripts/docker-entrypoint.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

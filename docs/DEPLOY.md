@@ -12,10 +12,12 @@ Production scaffold for Railway, Render, or any Docker host. For India-focused S
 ## Railway
 
 1. Connect GitHub repo `ujjwal-coder211/Saas`
-2. Use `deploy/railway.toml` — Dockerfile build, `/health` check
-3. Add PostgreSQL and Redis plugins; map `DATABASE_URL`, `REDIS_URL`
-4. Set `SAAS_PUBLIC_URL` to your Railway domain
-5. Set `NEURALROUTER_CORS_ORIGINS` to your web origin
+2. **Settings → Deploy → Custom Start Command:** leave **empty** (uses `railway.toml` → `docker-entrypoint.sh`)
+3. If you see `$PORT is not a valid integer`, delete the old start command and redeploy
+4. Add PostgreSQL and Redis plugins; map `DATABASE_URL`, `REDIS_URL`
+5. Set `PUBLIC_DEMO_ENABLED=true`, `OPENROUTER_API_KEY`, `DEEPINFRA_API_KEY`
+6. Set `SAAS_PUBLIC_URL` to your Railway domain
+7. Set `NEURALROUTER_CORS_ORIGINS` to your web origin
 
 ## Render
 
