@@ -1,6 +1,19 @@
 # Deploy Aksh on E2E Networks (India)
 
+**Full step-by-step (inch by inch):** [E2E_DEPLOY_INCH_BY_INCH.md](./E2E_DEPLOY_INCH_BY_INCH.md)
+
 Production target: **100% E2E Networks** — API, DB, storage, GPU.
+
+## Quick Docker deploy (production)
+
+```bash
+cp .env.production.example .env
+# edit .env — OPENROUTER_API_KEY, POSTGRES_PASSWORD, secrets
+docker compose -f docker-compose.prod.yml up -d --build
+curl http://127.0.0.1:8000/health
+```
+
+Files: `Dockerfile`, `docker-compose.prod.yml`, `scripts/docker-entrypoint.sh`
 
 ## Regions
 

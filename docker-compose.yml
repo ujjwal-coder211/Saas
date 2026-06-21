@@ -44,7 +44,9 @@ services:
         condition: service_healthy
     volumes:
       - omni_vault:/app/omni_training/data/vault
+      - project_data:/app/data/projects
 
 volumes:
   pgdata:
   omni_vault:
+  project_data:

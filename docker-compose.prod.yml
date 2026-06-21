@@ -1,0 +1,81 @@
+# Aksh production stack — use on E2E Networks VM (Delhi NCR)
+#
+# Setup:
+#   cp .env.production.example .env
+#   # Edit .env — OPENROUTER_API_KEY, JWT_SECRET, passwords, domain URLs
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Verify:
+#   curl http://127.0.0.1:8000/health
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aitotech}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-neuralrouter}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./saas/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aitotech} -d ${POSTGRES_DB:-neuralrouter}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aksh
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - aksh
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AKSH_HTTP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-aitotech}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-neuralrouter}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - omni_vault:/app/omni_training/data/vault
+      - project_data:/app/data/projects
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - aksh
+
+volumes:
+  pgdata:
+  redisdata:
+  omni_vault:
+  project_data:
+
+networks:
+  aksh:
+    driver: bridge
