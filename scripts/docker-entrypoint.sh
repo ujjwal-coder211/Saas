@@ -35,5 +35,5 @@ python scripts/init_db.py || true
 
 mkdir -p /app/data/projects /app/omni_training/data/vault
 
-echo "[Aksh] Starting API on port 8000..."
-exec uvicorn neuralrouter.main:app --host 0.0.0.0 --port 8000
+echo "[Aksh] Starting API on port ${PORT:-8000}..."
+exec uvicorn neuralrouter.main:app --host 0.0.0.0 --port "${PORT:-8000}"

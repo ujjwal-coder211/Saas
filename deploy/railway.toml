@@ -3,10 +3,11 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn neuralrouter.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
+
+# Uses Dockerfile ENTRYPOINT (docker-entrypoint.sh) — listens on $PORT for Railway
 
 # Set all secrets in Railway dashboard (see docs/DEPLOY.md)
 # DATABASE_URL, REDIS_URL, provider keys, AKSH_SEARCH_API_KEY, OMNI_* vault keys
