@@ -9,6 +9,7 @@ Aitotech (company)
 ```
 
 Full roadmap: [docs/AKSH_ROADMAP.md](docs/AKSH_ROADMAP.md)  
+**Ship (idea → deploy):** [docs/AKSH_SHIP.md](docs/AKSH_SHIP.md)  
 **User guide:** [README_USER.md](README_USER.md) · [docs/USER_CHECKLIST.md](docs/USER_CHECKLIST.md)  
 **Web docs:** `/web/docs/` · **Landing:** `/web/index.html`  
 Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · E2E: [docs/E2E_DEPLOY.md](docs/E2E_DEPLOY.md) · Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)

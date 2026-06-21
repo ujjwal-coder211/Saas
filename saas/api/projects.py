@@ -17,9 +17,12 @@ from saas.storage.projects import (
     ensure_storage,
     import_zip,
     list_files,
+    project_root_path,
     read_file,
     write_file,
 )
+from neuralrouter.deploy.kit import generate_deploy_kit
+from neuralrouter.security.scan import scan_project
 
 router = APIRouter(prefix="/saas/v1/projects", tags=["projects"])
 
@@ -229,3 +232,59 @@ async def delete_project(
         session.execute(text("DELETE FROM projects WHERE id = :id"), {"id": project_id})
     delete_project_files(user_id, project_id)
     return {"status": "deleted", "id": project_id}
+
+
+@router.post("/{project_id}/deploy-kit")
+async def create_deploy_kit(
+    project_id: str,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+):
+    """Generate Dockerfile, compose, DEPLOY.md, and k8s templates in the project."""
+    user_id = _require_user(auth)
+    with db_session() as session:
+        project = _get_project(session, project_id, user_id)
+    root = project_root_path(user_id, project_id)
+    result = generate_deploy_kit(root, project_name=project["name"])
+    with db_session() as session:
+        for path in list_files(user_id, project_id):
+            try:
+                content = read_file(user_id, project_id, path)
+                meta = write_file(user_id, project_id, path, content)
+            except Exception:
+                continue
+            session.execute(
+                text(
+                    """
+                    INSERT INTO project_files (project_id, path, content_hash, size_bytes)
+                    VALUES (:pid, :path, :hash, :size)
+                    ON CONFLICT (project_id, path) DO UPDATE
+                    SET content_hash = EXCLUDED.content_hash,
+                        size_bytes = EXCLUDED.size_bytes,
+                        updated_at = NOW()
+                    """
+                ),
+                {
+                    "pid": project_id,
+                    "path": path,
+                    "hash": meta.get("content_hash"),
+                    "size": meta.get("size_bytes", 0),
+                },
+            )
+        session.execute(
+            text("UPDATE projects SET updated_at = NOW() WHERE id = :id"),
+            {"id": project_id},
+        )
+    return result
+
+
+@router.post("/{project_id}/security-scan")
+async def security_scan(
+    project_id: str,
+    auth: Annotated[AuthContext, Depends(verify_auth)],
+):
+    """Run basic security scan on cloud project files."""
+    user_id = _require_user(auth)
+    with db_session() as session:
+        _get_project(session, project_id, user_id)
+    root = project_root_path(user_id, project_id)
+    return scan_project(root)

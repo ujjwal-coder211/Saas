@@ -1,4 +1,4 @@
-"""Aksh Agent loop — plan → tool calls → synthesize (max 5 steps)."""
+"""Aksh Agent loop — plan → tool calls → synthesize (max 8 steps)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Any
 
 from neuralrouter.agent.tools import ALLOWED_TOOLS, run_tool
+from neuralrouter.work_modes import WorkScope, build_scope, scope_confirmation
 
-MAX_STEPS = 5
+MAX_STEPS = 8
 
 _TOOL_CALL_RE = re.compile(
     r"```tool\s*\n(\{.*?\})\s*\n```",
@@ -31,6 +32,8 @@ class AgentResult:
     answer: str
     steps: list[AgentStep] = field(default_factory=list)
     tools_used: list[str] = field(default_factory=list)
+    work_mode: str = "ship"
+    scope_summary: str = ""
 
 
 def _parse_tool_call(text: str) -> dict[str, Any] | None:
@@ -49,30 +52,36 @@ def _parse_tool_call(text: str) -> dict[str, Any] | None:
     return {"tool": name, "args": payload.get("args") or {}}
 
 
-def _plan_prompt(task: str, file_context: str, rules: str) -> str:
+def _plan_prompt(task: str, file_context: str, rules: str, scope: WorkScope) -> str:
     ctx = file_context.strip() or "(no @file context)"
     rules_block = rules.strip() or "(no .akshrules)"
+    tool_list = ", ".join(ALLOWED_TOOLS)
     return (
-        "You are Aksh Agent. Break the task into small steps.\n"
+        "You are Aksh Agent (Omni). Break the task into small steps.\n"
+        f"{scope_confirmation(scope)}\n\n"
         "To call a tool, emit exactly one block:\n"
         "```tool\n"
         '{"tool": "read_file", "args": {"path": "src/main.py"}}\n'
         "```\n"
-        f"Allowed tools: {', '.join(ALLOWED_TOOLS)}\n\n"
+        f"Allowed tools: {tool_list}\n"
+        f"Write allowed: {scope.allow_write}. Deploy tools allowed: {scope.allow_deploy}.\n\n"
         f"Project rules (.akshrules):\n{rules_block}\n\n"
         f"@file context:\n{ctx}\n\n"
         f"Task:\n{task}\n"
     )
 
 
-def _synthesize_prompt(task: str, trace: list[AgentStep]) -> str:
-    lines = [f"Task: {task}", "", "Tool trace:"]
+def _synthesize_prompt(task: str, trace: list[AgentStep], scope: WorkScope) -> str:
+    lines = [f"Task: {task}", f"Mode: {scope.label} — {scope.summary}", "", "Tool trace:"]
     for s in trace:
         lines.append(f"- Step {s.step} [{s.kind}]: {s.content[:500]}")
         if s.tool_result:
-            lines.append(f"  Result: {json.dumps(s.tool_result, ensure_ascii=False)[:800]}")
+            lines.append(f"  Result: {json.dumps(s.tool_result, ensure_ascii=False)[:1200]}")
     lines.append("")
-    lines.append("Write the final answer for the user. Be concise.")
+    lines.append(
+        "Write the final answer for the user in simple English. "
+        "Summarize what changed, what was scanned, or what to deploy next."
+    )
     return "\n".join(lines)
 
 
@@ -82,28 +91,38 @@ async def run_agent_loop(
     file_context: str = "",
     rules: str = "",
     project_root: Path | None = None,
+    work_mode: str = "auto",
     llm_plan: Any | None = None,
 ) -> AgentResult:
-    """
-    MVP agent loop. Uses optional llm_plan(messages) -> str for planning/synthesis.
-    Without LLM, returns a structured stub describing planned tool usage.
-    """
+    if not llm_plan:
+        raise ValueError(
+            "Omni Agent requires provider API keys (OpenRouter). "
+            "Set OPENROUTER_API_KEY in .env and restart the server."
+        )
+
+    scope = build_scope(work_mode, task)  # type: ignore[arg-type]
     steps: list[AgentStep] = []
     tools_used: list[str] = []
 
-    plan_input = _plan_prompt(task, file_context, rules)
-    plan_text = plan_input
-    if llm_plan:
-        plan_text = await llm_plan([{"role": "user", "content": plan_input}])
-
+    plan_input = _plan_prompt(task, file_context, rules, scope)
+    plan_text = await llm_plan([{"role": "user", "content": plan_input}])
     steps.append(AgentStep(step=1, kind="plan", content=plan_text))
 
+    observe_text = plan_text
     for i in range(2, MAX_STEPS + 1):
-        call = _parse_tool_call(plan_text if i == 2 else steps[-1].content)
+        call = _parse_tool_call(observe_text)
         if not call:
             break
         tool_name = call["tool"]
-        result = run_tool(tool_name, call["args"], project_root=project_root)
+        if tool_name == "generate_deploy_kit" and not scope.allow_deploy:
+            result = {"ok": False, "error": "Deploy tools blocked in this work mode"}
+        else:
+            result = run_tool(
+                tool_name,
+                call["args"],
+                project_root=project_root,
+                allow_write=scope.allow_write,
+            )
         tools_used.append(tool_name)
         steps.append(
             AgentStep(
@@ -113,32 +132,34 @@ async def run_agent_loop(
                 tool_result=result,
             )
         )
-        if llm_plan and i < MAX_STEPS:
-            follow = await llm_plan(
-                [
-                    {"role": "user", "content": plan_input},
-                    {"role": "assistant", "content": plan_text},
-                    {
-                        "role": "user",
-                        "content": f"Tool result:\n{json.dumps(result)}\nContinue or finish.",
-                    },
-                ]
-            )
-            steps.append(AgentStep(step=i, kind="observe", content=follow))
-            if "```tool" not in follow:
-                break
-            plan_text = follow
-        else:
+        if i >= MAX_STEPS:
             break
-
-    synth_input = _synthesize_prompt(task, steps)
-    if llm_plan:
-        answer = await llm_plan([{"role": "user", "content": synth_input}])
-    else:
-        answer = (
-            "Agent scaffold completed without LLM.\n"
-            f"Steps: {len(steps)}. Tools: {', '.join(tools_used) or 'none'}.\n"
-            "Connect provider keys to enable full autonomous agent."
+        follow = await llm_plan(
+            [
+                {"role": "user", "content": plan_input},
+                {"role": "assistant", "content": plan_text},
+                {
+                    "role": "user",
+                    "content": f"Tool result:\n{json.dumps(result)}\nContinue with another tool or finish.",
+                },
+            ]
         )
+        steps.append(AgentStep(step=i, kind="observe", content=follow))
+        if "```tool" not in follow:
+            break
+        observe_text = follow
 
-    return AgentResult(answer=answer, steps=steps, tools_used=tools_used)
+    synth_input = _synthesize_prompt(task, steps, scope)
+    answer = await llm_plan([{"role": "user", "content": synth_input}])
+
+    prefix = f"{scope_confirmation(scope)}\n\n"
+    if not answer.startswith("["):
+        answer = prefix + answer
+
+    return AgentResult(
+        answer=answer,
+        steps=steps,
+        tools_used=tools_used,
+        work_mode=scope.mode,
+        scope_summary=scope.summary,
+    )

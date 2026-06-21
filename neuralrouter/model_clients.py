@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 _clients: dict[str, AsyncOpenAI] = {}
 
 
+def provider_configured() -> bool:
+    """True when at least OpenRouter is configured (minimum for Omni chat/agent)."""
+    return bool(OPENROUTER_API_KEY and OPENROUTER_API_KEY not in ("", "not-configured"))
+
+
 def _get_client(name: str, api_key: str, base_url: str) -> AsyncOpenAI:
     if name not in _clients:
         # Placeholder key allows app to start; real calls fail until .env is set

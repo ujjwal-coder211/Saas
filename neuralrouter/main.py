@@ -20,9 +20,11 @@ import uuid
 from neuralrouter.env_loader import load_dotenv  # noqa: F401 — loads .env on import
 from typing import Annotated, Literal, Optional
 
+import json
+
 from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
@@ -50,6 +52,8 @@ from saas.api.threads import router as threads_router, load_thread_history, save
 from saas.api.projects import router as projects_router
 from saas.db.connection import saas_db_enabled
 from neuralrouter.chat_service import PUBLIC_MODEL_ID
+from neuralrouter.project_context import enrich_message_with_project, resolve_agent_root
+from neuralrouter.work_modes import WorkMode
 
 sys.path.insert(0, str(ROOT_DIR))
 from omni_training.logger import log_interaction, record_feedback  # noqa: E402
@@ -94,6 +98,7 @@ class ChatRequest(BaseModel):
     force_model: Optional[str] = None
     thread_id: Optional[str] = None
     project_id: Optional[str] = None
+    work_mode: WorkMode = "auto"
     search: Optional[Literal["auto", "on", "off"]] = "auto"
     file_context: Optional[str] = Field(default=None, max_length=MAX_MESSAGE_CHARS)
     rules: Optional[str] = Field(default=None, max_length=8000)
@@ -127,6 +132,7 @@ class OpenAIChatRequest(BaseModel):
     messages: list[OpenAIMessage] = Field(..., min_length=1)
     stream: Optional[bool] = False
     search: Optional[Literal["auto", "on", "off"]] = "auto"
+    work_mode: WorkMode = "auto"
 
 
 class FeedbackRequest(BaseModel):
@@ -140,9 +146,11 @@ class AgentRunRequest(BaseModel):
     task: str = Field(..., min_length=1, max_length=MAX_MESSAGE_CHARS)
     file_context: str = Field(default="", max_length=MAX_MESSAGE_CHARS)
     rules: str = Field(default="", max_length=8000)
+    project_id: Optional[str] = None
+    work_mode: WorkMode = "auto"
     project_root: Optional[str] = Field(
         default=None,
-        description="Optional sandbox root path on server (dev only)",
+        description="Optional sandbox root path on server (enterprise on-prem only)",
     )
 
 
@@ -185,8 +193,13 @@ async def _execute_chat(
     file_context: str | None = None,
     rules: str | None = None,
     thread_id: str | None = None,
+    project_id: str | None = None,
+    work_mode: WorkMode = "auto",
 ) -> tuple:
     request_id = f"req_{uuid.uuid4().hex[:16]}"
+
+    if project_id and auth.user_id and saas_db_enabled():
+        _assert_project_access(project_id, auth.user_id)
 
     if auth.user_id:
         try:
@@ -223,6 +236,9 @@ async def _execute_chat(
             file_context=file_context,
             rules=rules,
             history=history,
+            work_mode=work_mode,
+            user_id=auth.user_id,
+            project_id=project_id,
         )
 
     row_id = log_interaction(
@@ -266,6 +282,20 @@ async def _execute_chat(
             logger.exception("Failed to save thread messages")
 
     return result, row_id
+
+
+def _assert_project_access(project_id: str, user_id: str) -> None:
+    from sqlalchemy import text
+
+    from saas.db.connection import db_session
+
+    with db_session() as session:
+        row = session.execute(
+            text("SELECT id FROM projects WHERE id = :id AND user_id = :uid"),
+            {"id": project_id, "uid": user_id},
+        ).first()
+    if not row:
+        raise HTTPException(404, "Project not found")
 
 
 @app.get("/health")
@@ -326,6 +356,8 @@ async def chat(
         file_context=body.file_context,
         rules=body.rules,
         thread_id=body.thread_id,
+        project_id=body.project_id,
+        work_mode=body.work_mode,
     )
     return ChatResponse(
         row_id=row_id,
@@ -351,17 +383,55 @@ async def chat_completions(
     rate_limit(request, auth)
 
     if body.stream:
-        raise HTTPException(
-            501,
-            "Streaming not supported yet. Set stream=false.",
-        )
+        message = _messages_to_query(body.messages)
+        if len(message) > MAX_MESSAGE_CHARS:
+            raise HTTPException(400, f"Message too long (max {MAX_MESSAGE_CHARS} chars)")
+        force = _resolve_force_model(body.model)
+
+        async def event_stream():
+            result, _row_id = await _execute_chat(
+                message,
+                force,
+                auth,
+                body.search or "auto",
+                work_mode=body.work_mode,
+            )
+            payload = {
+                "id": f"chatcmpl-{uuid.uuid4().hex[:24]}",
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": PUBLIC_MODEL_ID,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"role": "assistant", "content": result.answer},
+                        "finish_reason": None,
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
+            done = {
+                "id": payload["id"],
+                "object": "chat.completion.chunk",
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+            }
+            yield f"data: {json.dumps(done)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
 
     message = _messages_to_query(body.messages)
     if len(message) > MAX_MESSAGE_CHARS:
         raise HTTPException(400, f"Message too long (max {MAX_MESSAGE_CHARS} chars)")
 
     force = _resolve_force_model(body.model)
-    result, _row_id = await _execute_chat(message, force, auth, body.search or "auto")
+    result, _row_id = await _execute_chat(
+        message,
+        force,
+        auth,
+        body.search or "auto",
+        work_mode=body.work_mode,
+    )
 
     completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
     return {
@@ -433,26 +503,55 @@ async def agent_run(
     body: AgentRunRequest,
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
-    """Aksh Agent scaffold — plan → tools → synthesize (max 5 steps)."""
+    """Aksh Agent — plan → tools → synthesize on cloud project or enterprise path."""
     rate_limit(request, auth)
     from pathlib import Path
 
     from neuralrouter.agent.agent_loop import run_agent_loop
-    from neuralrouter.model_clients import call_model
+    from neuralrouter.model_clients import call_model, provider_configured
 
-    project_root = Path(body.project_root).resolve() if body.project_root else None
+    if not provider_configured():
+        raise HTTPException(
+            503,
+            "Omni Agent needs OPENROUTER_API_KEY (or other provider keys) in .env",
+        )
+
+    project_root: Path | None = None
+    rules = body.rules
+    file_context = body.file_context
+
+    if body.project_id:
+        if not auth.user_id or not saas_db_enabled():
+            raise HTTPException(401, "Cloud agent requires SaaS account and DATABASE_URL")
+        _assert_project_access(body.project_id, auth.user_id)
+        project_root = resolve_agent_root(auth.user_id, body.project_id)
+        enriched, rules = enrich_message_with_project(
+            body.task,
+            auth.user_id,
+            body.project_id,
+            rules=body.rules or None,
+        )
+        if not file_context:
+            file_context = enriched
+    elif body.project_root:
+        project_root = Path(body.project_root).resolve()
 
     async def llm_plan(messages: list[dict]) -> str:
         text = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        result = await call_model(text, "qwen", system_prompt="You are Aksh Agent.")
+        result = await call_model(
+            text,
+            "qwen",
+            system_prompt="You are Aksh Agent powered by Omni. Follow work mode scope strictly.",
+        )
         return result.get("content", "")
 
     try:
         result = await run_agent_loop(
             body.task,
-            file_context=body.file_context,
-            rules=body.rules,
+            file_context=file_context,
+            rules=rules,
             project_root=project_root,
+            work_mode=body.work_mode,
             llm_plan=llm_plan,
         )
     except ValueError as exc:
@@ -461,6 +560,9 @@ async def agent_run(
     return {
         "answer": result.answer,
         "tools_used": result.tools_used,
+        "work_mode": result.work_mode,
+        "scope_summary": result.scope_summary,
+        "project_id": body.project_id,
         "steps": [
             {
                 "step": s.step,

@@ -73,6 +73,16 @@
       <option value="on">On</option>
       <option value="off">Off</option>
     </select>
+    <label>Mode</label>
+    <select id="workMode">
+      <option value="auto">Auto</option>
+      <option value="ship">Ship</option>
+      <option value="fix">Fix</option>
+      <option value="extend">Extend</option>
+      <option value="guard">Guard</option>
+      <option value="explain">Explain</option>
+      <option value="deploy">Deploy</option>
+    </select>
     <div class="tabs">
       <button type="button" id="tabChat" class="tab-active" onclick="setMode('chat')">Chat</button>
       <button type="button" id="tabAgent" class="secondary" onclick="setMode('agent')">Agent</button>
@@ -91,6 +101,7 @@
     const apiUrl = document.getElementById('apiUrl');
     const apiKey = document.getElementById('apiKey');
     const searchMode = document.getElementById('searchMode');
+    const workMode = document.getElementById('workMode');
     const threadSelect = document.getElementById('threadSelect');
     let uiMode = 'chat';
     let threadId = localStorage.getItem('aksh_chat_thread') || '';
@@ -98,11 +109,13 @@
     apiUrl.value = localStorage.getItem('nr_url') || apiUrl.value;
     apiKey.value = localStorage.getItem('nr_key') || '';
     searchMode.value = localStorage.getItem('aksh_search_mode') || 'auto';
+    workMode.value = localStorage.getItem('aksh_work_mode') || 'auto';
 
     document.getElementById('saveCfg').onclick = () => {
       localStorage.setItem('nr_url', apiUrl.value.replace(/\/$/, ''));
       localStorage.setItem('nr_key', apiKey.value);
       localStorage.setItem('aksh_search_mode', searchMode.value);
+      localStorage.setItem('aksh_work_mode', workMode.value);
       alert('Saved');
     };
 
@@ -143,6 +156,8 @@
         localStorage.setItem('aksh_chat_thread', threadId);
         msgs.innerHTML = '';
         await loadThreads();
+      } else {
+        alert(data.detail || 'Could not create thread — need SaaS API key + database');
       }
     }
 
@@ -194,9 +209,13 @@
       const base = (localStorage.getItem('nr_url') || apiUrl.value).replace(/\/$/, '');
       const key = localStorage.getItem('nr_key') || apiKey.value;
       const search = localStorage.getItem('aksh_search_mode') || searchMode.value;
+      const mode = localStorage.getItem('aksh_work_mode') || workMode.value;
       try {
+        if (uiMode === 'chat' && !threadId) await newThread();
         const path = uiMode === 'agent' ? '/v1/agent/run' : '/v1/chat';
-        const body = uiMode === 'agent' ? { task: q } : { message: q, search, thread_id: threadId || undefined };
+        const body = uiMode === 'agent'
+          ? { task: q, work_mode: mode }
+          : { message: q, search, work_mode: mode, thread_id: threadId || undefined };
         const res = await fetch(base + path, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -205,9 +224,10 @@
         const data = await res.json();
         if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
         const metaParts = uiMode === 'agent'
-          ? ['Agent', 'tools: ' + (data.tools_used || []).join(', ')]
+          ? ['Agent', 'mode: ' + (data.work_mode || mode), 'tools: ' + (data.tools_used || []).join(', ')]
           : [
               'Omni',
+              'mode: ' + ((data.omni_controller && data.omni_controller.work_mode) || mode),
               'search: ' + (data.web_search_used ? 'used' : 'no'),
               data.thread_id ? 'thread saved' : ''
             ].filter(Boolean);

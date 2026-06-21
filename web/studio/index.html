@@ -66,8 +66,13 @@
       </div>
       <div class="row">
         <button onclick="createCloudProject()">New cloud</button>
+        <button class="secondary" onclick="deleteCloudProject()">Delete</button>
         <label style="cursor:pointer"><button class="secondary" onclick="document.getElementById('zipInput').click()">Upload zip</button></label>
         <input id="zipInput" type="file" accept=".zip" style="display:none" onchange="uploadZip(this.files[0])" />
+      </div>
+      <div class="row">
+        <button class="secondary" onclick="runDeployKit()">Deploy kit</button>
+        <button class="secondary" onclick="runSecurityScan()">Security scan</button>
       </div>
       <h3 style="margin-top:12px">Files</h3>
       <ul id="fileTree" class="file-tree"></ul>
@@ -91,6 +96,15 @@
           <button id="tabAgent" onclick="setTab('agent')">Agent</button>
         </div>
         <div class="row">
+          <select id="workMode">
+            <option value="auto">Mode: Auto</option>
+            <option value="ship">Ship (full build)</option>
+            <option value="fix">Fix (bugs only)</option>
+            <option value="extend">Extend (add feature)</option>
+            <option value="guard">Guard (security scan)</option>
+            <option value="explain">Explain (no edits)</option>
+            <option value="deploy">Deploy (Docker/K8s)</option>
+          </select>
           <select id="searchMode">
             <option value="auto">Search: Auto</option>
             <option value="on">On</option>
@@ -101,8 +115,8 @@
       </div>
       <div id="chatLog" class="chat-log"></div>
       <div class="chat-input">
-        <textarea id="prompt" placeholder="Omni se poocho — coding, app, Hinglish..."></textarea>
-        <button id="sendBtn" onclick="send()">Ask Omni</button>
+        <textarea id="prompt" placeholder="Ask Omni — build an app, fix a bug, deploy with Docker..."></textarea>
+        <button id="sendBtn" onclick="send()">Send to Omni</button>
       </div>
     </aside>
   </div>
@@ -111,6 +125,7 @@
     const LS_KEY = 'nr_key';
     const LS_THREAD = 'aksh_active_thread';
     const LS_SEARCH = 'aksh_search_mode';
+    const LS_WORK = 'aksh_work_mode';
     let editor = null, activeTab = 'chat';
     let cloudProjectId = null, activeFile = 'README.md', fileCache = {};
     let threadId = localStorage.getItem(LS_THREAD) || null;
@@ -127,8 +142,38 @@
     function saveSettings() {
       localStorage.setItem(LS_KEY, document.getElementById('apiKey').value);
       localStorage.setItem(LS_SEARCH, document.getElementById('searchMode').value);
+      localStorage.setItem(LS_WORK, document.getElementById('workMode').value);
       refreshCloudProjects();
       refreshThreads();
+    }
+
+    async function deleteCloudProject() {
+      if (!cloudProjectId) return alert('Select a project first');
+      if (!confirm('Delete this cloud project?')) return;
+      const res = await api('/saas/v1/projects/' + cloudProjectId, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); return alert(d.detail || 'Delete failed'); }
+      cloudProjectId = null;
+      fileCache = {};
+      renderTree();
+      await refreshCloudProjects();
+    }
+
+    async function runDeployKit() {
+      if (!cloudProjectId) return alert('Select a cloud project first');
+      const res = await api('/saas/v1/projects/' + cloudProjectId + '/deploy-kit', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return alert(data.detail || JSON.stringify(data));
+      alert(data.message || 'Deploy kit generated');
+      await loadCloudProject(cloudProjectId);
+    }
+
+    async function runSecurityScan() {
+      if (!cloudProjectId) return alert('Select a cloud project first');
+      const res = await api('/saas/v1/projects/' + cloudProjectId + '/security-scan', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return alert(data.detail || JSON.stringify(data));
+      const lines = (data.findings || []).slice(0, 8).map(f => `[${f.severity}] ${f.file}: ${f.message}`).join('\n');
+      addMsg('bot', (data.summary || 'Scan done') + (lines ? '\n\n' + lines : ''));
     }
 
     async function refreshCloudProjects() {
@@ -253,7 +298,9 @@
     }
 
     async function newThread() {
-      const res = await api('/saas/v1/threads', { method: 'POST', body: JSON.stringify({ title: 'New chat' }) });
+      const body = { title: 'New chat' };
+      if (cloudProjectId) body.project_id = cloudProjectId;
+      const res = await api('/saas/v1/threads', { method: 'POST', body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) return alert(data.detail || 'Need SaaS account');
       threadId = data.id;
@@ -273,10 +320,15 @@
       (data.messages || []).forEach(m => addMsg(m.role === 'user' ? 'user' : 'bot', m.content, false));
     }
 
+    function updateSendLabel() {
+      document.getElementById('sendBtn').textContent = activeTab === 'agent' ? 'Run Agent' : 'Send to Omni';
+    }
+
     function setTab(tab) {
       activeTab = tab;
       document.getElementById('tabChat').classList.toggle('tab-active', tab === 'chat');
       document.getElementById('tabAgent').classList.toggle('tab-active', tab === 'agent');
+      updateSendLabel();
     }
 
     function addMsg(role, text, scroll = true) {
@@ -296,6 +348,7 @@
       document.getElementById('prompt').value = '';
       document.getElementById('sendBtn').disabled = true;
       const search = document.getElementById('searchMode').value;
+      const work_mode = document.getElementById('workMode').value;
       let file_context = '';
       if (document.getElementById('attachFile').checked && activeFile) {
         file_context = 'File: ' + activeFile + '\n```\n' + (fileCache[activeFile] || '') + '\n```';
@@ -304,8 +357,8 @@
       try {
         const path = activeTab === 'agent' ? '/v1/agent/run' : '/v1/chat';
         const body = activeTab === 'agent'
-          ? { task: q, file_context, rules }
-          : { message: q, search, file_context, rules, thread_id: threadId, project_id: cloudProjectId };
+          ? { task: q, file_context, rules, project_id: cloudProjectId, work_mode }
+          : { message: q, search, work_mode, file_context, rules, thread_id: threadId, project_id: cloudProjectId };
         const res = await api(path, { method: 'POST', body: JSON.stringify(body) });
         const data = await res.json();
         if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
@@ -328,6 +381,9 @@
       if (savedKey) document.getElementById('apiKey').value = savedKey;
       const savedSearch = localStorage.getItem(LS_SEARCH);
       if (savedSearch) document.getElementById('searchMode').value = savedSearch;
+      const savedWork = localStorage.getItem(LS_WORK);
+      if (savedWork) document.getElementById('workMode').value = savedWork;
+      updateSendLabel();
       refreshCloudProjects();
       refreshThreads();
       if (threadId) selectThread(threadId);

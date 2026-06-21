@@ -14,8 +14,10 @@ from omni_training.schema import ResponsePattern
 from neuralrouter.model_clients import call_model
 from neuralrouter.omni_controller import OmniPlan, apply_search_context, build_system_prompt, plan_turn
 from neuralrouter.omni_brain.loader import omni_native_plan_hint
+from neuralrouter.project_context import enrich_message_with_project
 from neuralrouter.router import REGISTRY, confidence_for
 from neuralrouter.search.web_search import aksh_search
+from neuralrouter.work_modes import WorkMode, scope_confirmation, build_scope
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +135,8 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
             "reasoning": plan.reasoning,
             "output_style": plan.output_style,
             "search_mode": plan.search_mode,
+            "work_mode": plan.work_mode,
+            "scope_summary": plan.scope_summary,
             "brain_version_id": plan.brain_version_id,
             "brain_type": plan.brain_type,
         },
@@ -147,21 +151,32 @@ async def run_chat(
     file_context: str | None = None,
     rules: str | None = None,
     history: list[dict] | None = None,
+    work_mode: WorkMode = "auto",
+    user_id: str | None = None,
+    project_id: str | None = None,
 ) -> ChatResult:
-    enriched = message
+    enriched, effective_rules = enrich_message_with_project(
+        message,
+        user_id,
+        project_id,
+        rules=rules,
+        include_index=True,
+    )
+
     if history:
         lines = []
         for h in history[-20:]:
             role = h.get("role", "user").upper()
             lines.append(f"{role}: {h.get('content', '')}")
         if lines:
-            enriched = "Previous conversation:\n" + "\n".join(lines) + "\n\nCurrent message:\n" + message
-    if file_context:
-        enriched = f"@file context:\n{file_context.strip()}\n\nUser message:\n{message}"
-    if rules:
-        enriched = f"Project rules (.akshrules):\n{rules.strip()}\n\n{enriched}"
+            enriched = "Previous conversation:\n" + "\n".join(lines) + "\n\n" + enriched
 
-    plan = plan_turn(enriched, force_model=force_model, search_mode=search_mode)
+    if file_context:
+        enriched = f"@file context:\n{file_context.strip()}\n\n{enriched}"
+    elif effective_rules and not project_id:
+        enriched = f"Project rules (.akshrules):\n{effective_rules.strip()}\n\n{enriched}"
+
+    plan = plan_turn(enriched, force_model=force_model, search_mode=search_mode, work_mode=work_mode)
 
     hint = await omni_native_plan_hint(enriched)
     if hint:
@@ -181,9 +196,13 @@ async def run_chat(
 
     if plan.use_web_search:
         try:
-            search_result = await aksh_search(enriched)
+            search_result = await aksh_search(message)
             plan = apply_search_context(plan, search_result)
         except Exception:
             logger.exception("Aksh Search failed — continuing without web context")
 
-    return await _run_with_plan(plan)
+    result = await _run_with_plan(plan)
+    scope = build_scope(work_mode, message)
+    if scope.mode != "auto" and not result.answer.startswith("[Aksh"):
+        result.answer = f"{scope_confirmation(scope)}\n\n{result.answer}"
+    return result

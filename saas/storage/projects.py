@@ -22,6 +22,11 @@ def _project_dir(user_id: str, project_id: str) -> Path:
     return PROJECTS_ROOT / user_id / project_id
 
 
+def project_root_path(user_id: str, project_id: str) -> Path:
+    """Absolute path to a user's cloud project (agent + index root)."""
+    return _project_dir(user_id, project_id)
+
+
 def ensure_storage() -> None:
     PROJECTS_ROOT.mkdir(parents=True, exist_ok=True)
 

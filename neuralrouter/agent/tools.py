@@ -6,7 +6,17 @@ import re
 from pathlib import Path
 from typing import Any
 
-ALLOWED_TOOLS = ("read_file", "write_file", "grep")
+from neuralrouter.deploy.kit import generate_deploy_kit
+from neuralrouter.security.scan import scan_project
+
+ALLOWED_TOOLS = (
+    "read_file",
+    "write_file",
+    "grep",
+    "list_files",
+    "generate_deploy_kit",
+    "security_scan",
+)
 
 
 def _resolve_path(project_root: Path | None, rel_path: str) -> Path:
@@ -36,6 +46,21 @@ def write_file(project_root: Path | None, path: str, content: str) -> dict[str, 
     return {"ok": True, "path": path, "bytes_written": len(content.encode("utf-8"))}
 
 
+def list_files_tool(project_root: Path | None, path: str = ".") -> dict[str, Any]:
+    root = _resolve_path(project_root, path)
+    if not root.exists():
+        return {"ok": False, "error": f"Path not found: {path}"}
+    files: list[str] = []
+    base = (project_root or Path.cwd()).resolve()
+    if root.is_file():
+        files.append(str(root.relative_to(base)))
+    else:
+        for fp in sorted(root.rglob("*")):
+            if fp.is_file() and not any(p.startswith(".git") for p in fp.relative_to(base).parts):
+                files.append(str(fp.relative_to(base)).replace("\\", "/"))
+    return {"ok": True, "files": files[:200], "count": len(files)}
+
+
 def grep(
     project_root: Path | None,
     pattern: str,
@@ -53,6 +78,7 @@ def grep(
 
     matches: list[dict[str, Any]] = []
     files = [root] if root.is_file() else list(root.rglob("*"))
+    base = (project_root or Path.cwd()).resolve()
 
     for fp in files:
         if not fp.is_file():
@@ -63,7 +89,7 @@ def grep(
             text = fp.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
-        rel = str(fp.relative_to((project_root or Path.cwd()).resolve()))
+        rel = str(fp.relative_to(base)).replace("\\", "/")
         for i, line in enumerate(text.splitlines(), 1):
             if rx.search(line):
                 matches.append({"file": rel, "line": i, "text": line[:300]})
@@ -72,18 +98,41 @@ def grep(
     return {"ok": True, "pattern": pattern, "matches": matches, "truncated": False}
 
 
+def generate_deploy_kit_tool(project_root: Path | None, project_name: str = "app") -> dict[str, Any]:
+    if project_root is None:
+        return {"ok": False, "error": "Select a cloud project for deploy kit generation"}
+    return generate_deploy_kit(project_root, project_name=project_name)
+
+
+def security_scan_tool(project_root: Path | None) -> dict[str, Any]:
+    if project_root is None:
+        return {"ok": False, "error": "Select a cloud project for security scan"}
+    return scan_project(project_root)
+
+
 def run_tool(
     name: str,
     args: dict[str, Any],
     *,
     project_root: Path | None = None,
+    allow_write: bool = True,
 ) -> dict[str, Any]:
     if name not in ALLOWED_TOOLS:
         return {"ok": False, "error": f"Unknown tool: {name}"}
+
+    if name in ("write_file", "generate_deploy_kit") and not allow_write:
+        return {"ok": False, "error": f"Tool {name} blocked by work mode (read-only scope)"}
+
     if name == "read_file":
         return read_file(project_root, args.get("path", ""))
     if name == "write_file":
         return write_file(project_root, args.get("path", ""), args.get("content", ""))
     if name == "grep":
         return grep(project_root, args.get("pattern", ""), path=args.get("path", "."))
+    if name == "list_files":
+        return list_files_tool(project_root, args.get("path", "."))
+    if name == "generate_deploy_kit":
+        return generate_deploy_kit_tool(project_root, args.get("project_name", "app"))
+    if name == "security_scan":
+        return security_scan_tool(project_root)
     return {"ok": False, "error": "Unhandled tool"}
