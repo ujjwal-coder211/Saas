@@ -12,3 +12,7 @@ omni_training/data/vault/
 
 .DS_Store
 Thumbs.db
+# Browser app build artifacts
+apps/browser/node_modules/
+apps/browser/dist/
+apps/browser/tsconfig.tsbuildinfo

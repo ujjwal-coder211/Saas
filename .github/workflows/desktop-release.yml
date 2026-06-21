@@ -1,0 +1,29 @@
+# Stub — Routely desktop (Tauri) releases planned for month 5.
+# When apps/desktop exists, replace the placeholder job with build + gh release upload.
+
+name: Desktop Release (stub)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: true
+        type: string
+
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Desktop not ready yet
+        run: |
+          echo "Routely desktop (Tauri) is planned for month 5."
+          echo "Requested tag: ${{ github.event.inputs.tag }}"
+          echo ""
+          echo "When ready:"
+          echo "  1. Add apps/desktop with tauri.conf.json"
+          echo "  2. Build: tauri build --target x86_64-pc-windows-msvc (and macOS/linux)"
+          echo "  3. Upload artifacts to GitHub Releases"
+          echo "  4. Point aitotech.in/routely download link to latest release asset"
+          exit 0

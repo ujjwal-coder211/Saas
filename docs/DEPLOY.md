@@ -9,6 +9,11 @@ Production scaffold for Railway, Render, or any Docker host. For India-focused S
 3. PostgreSQL + Redis URLs
 4. Vault keys: `OMNI_VAULT_HMAC_KEY`, `OMNI_VAULT_ENCRYPTION_KEY`, `OMNI_ADMIN_KEY`
 
+## Related docs
+
+- [ROUTELY_DEPLOY.md](./ROUTELY_DEPLOY.md) — Routely CI/CD (Railway + Vercel + domains)
+- [ROUTELY.md](./ROUTELY.md) — product overview
+
 ## Railway
 
 1. Connect GitHub repo `ujjwal-coder211/Saas`

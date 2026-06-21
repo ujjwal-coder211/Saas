@@ -1,23 +1,23 @@
 {
   "model_id": "glm",
-  "display_name": "GLM 5.2",
-  "provider": "Z.ai / OpenRouter",
-  "api_model_string": "zhipu/glm-5.2",
-  "architecture_family": "MoE",
-  "total_params_b": 744,
-  "active_params_b": 40,
-  "context_window": 1000000,
-  "max_tokens": 8192,
-  "specialty_domains": ["repo-level coding", "agentic engineering", "huge context analysis"],
+  "display_name": "Gemma 3 (free)",
+  "provider": "OpenRouter",
+  "api_model_string": "google/gemma-3-27b-it:free",
+  "architecture_family": "Dense",
+  "total_params_b": 27,
+  "active_params_b": 27,
+  "context_window": 128000,
+  "max_tokens": 4096,
+  "specialty_domains": ["refactoring", "codebase-wide changes"],
   "sub_experts": [
-    {"id": "repo-expert", "name": "Repo-level Understanding", "keywords": ["repository", "codebase", "entire project", "whole repo"]},
-    {"id": "longctx-expert", "name": "Huge Context Analysis", "keywords": ["large file", "long document", "huge context", "1 million token"]},
-    {"id": "refactor-expert", "name": "Refactoring/Architecture", "keywords": ["refactor", "architecture review", "redesign"]}
+    {"id": "repo-expert", "name": "Codebase-wide", "keywords": ["codebase", "repository", "entire project", "whole repo", "all files"]},
+    {"id": "refactor-expert", "name": "Refactoring", "keywords": ["refactor", "rename", "restructure", "clean up", "architecture"]},
+    {"id": "review-expert", "name": "Code Review", "keywords": ["review", "improve", "best practice", "lint"]}
   ],
   "response_style": {
-    "typical_format": "multi-file aware, architectural reasoning",
+    "typical_format": "multi-file aware edits",
     "avg_temperature_used": 0.3,
-    "tends_to": "consider cross-file dependencies, longer planning before code"
+    "tends_to": "consider cross-file impact before changing code"
   },
-  "notes": "Metadata only — for routing and Omni pattern learning."
+  "notes": "Routely — refactor and repo-level routing slot."
 }

@@ -1,4 +1,4 @@
-"""Omni Memory — per-user chat threads API."""
+"""Omni Memory — per-user chat threads API (Routely persistent memory)."""
 
 from __future__ import annotations
 

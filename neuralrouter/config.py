@@ -30,7 +30,7 @@ ALLOW_UNAUTHENTICATED = os.environ.get("NEURALROUTER_ALLOW_UNAUTH", "").lower() 
 # Limits
 REQUEST_TIMEOUT_SECONDS = int(os.environ.get("NEURALROUTER_TIMEOUT_S", "30"))
 MAX_RETRIES = int(os.environ.get("NEURALROUTER_MAX_RETRIES", "2"))
-MAX_COLLABORATIVE_EXPERTS = int(os.environ.get("NEURALROUTER_MAX_EXPERTS", "3"))
+MAX_COLLABORATIVE_EXPERTS = int(os.environ.get("NEURALROUTER_MAX_EXPERTS", "1"))
 MAX_MESSAGE_CHARS = int(os.environ.get("NEURALROUTER_MAX_MESSAGE_CHARS", "32000"))
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("NEURALROUTER_RATE_LIMIT", "60"))
 MAX_CONCURRENT_PER_CLIENT = int(os.environ.get("NEURALROUTER_MAX_CONCURRENT_PER_CLIENT", "5"))
@@ -48,8 +48,8 @@ CORS_ORIGINS = [
     if o.strip()
 ]
 
-APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "Aksh API")
-APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "0.2.0-aksh")
+APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "Routely API")
+APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "0.1.0-routely")
 
 # SaaS infrastructure
 DATABASE_URL = os.environ.get("DATABASE_URL", "")

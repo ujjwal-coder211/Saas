@@ -22,7 +22,7 @@ from neuralrouter.work_modes import WorkMode, scope_confirmation, build_scope
 logger = logging.getLogger(__name__)
 
 SearchMode = Literal["auto", "on", "off"]
-PUBLIC_MODEL_ID = "omni"
+PUBLIC_MODEL_ID = "routely"
 
 
 @dataclass

@@ -74,15 +74,8 @@ def _client_for(model_id: str) -> tuple[AsyncOpenAI, dict]:
 
 
 def _ensure_provider_key(model_id: str) -> None:
-    meta = REGISTRY[model_id]
-    provider = meta.get("provider", "")
-    if "DeepInfra" in provider and not DEEPINFRA_API_KEY:
-        raise RuntimeError("DEEPINFRA_API_KEY not set in environment")
-    if "Moonshot" in provider and not MOONSHOT_API_KEY:
-        raise RuntimeError("MOONSHOT_API_KEY not set in environment")
-    if "OpenRouter" in provider or "Mistral" in provider or "Z.ai" in provider:
-        if not OPENROUTER_API_KEY:
-            raise RuntimeError("OPENROUTER_API_KEY not set in environment")
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY not set in environment")
 
 
 def _provider_key(model_id: str) -> str:

@@ -1,7 +1,7 @@
 """
-Omni Controller — Aksh main brain.
+Routely Router — task planner.
 
-Decides: work mode scope, web search, expert routing, output strategy.
+Decides: work mode scope, web search, best free model routing, output strategy.
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ def plan_turn(
     """
     scope = build_scope(work_mode, query)
     directives: list[str] = [
-        "You are Omni by Aksh (Aitotech). The user sees only Omni — never name internal expert models.",
+        "You are Routely by Aitotech. The user sees only Routely — never name internal model names.",
         "If web search context is provided, prefer it for time-sensitive facts.",
     ]
     directives.extend(scope.system_directives)

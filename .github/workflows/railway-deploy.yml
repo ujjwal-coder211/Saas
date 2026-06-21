@@ -1,0 +1,49 @@
+# Deploy Routely API to Railway on push to main.
+# Requires: RAILWAY_TOKEN (+ RAILWAY_SERVICE_ID or repo variable).
+# Alternative: connect this repo in Railway dashboard — Railway auto-deploys without this workflow.
+
+name: Deploy API to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'railway.toml'
+      - 'requirements.txt'
+      - 'neuralrouter/**'
+      - 'saas/**'
+      - 'omni_training/**'
+      - 'web/**'
+      - 'scripts/**'
+      - '.github/workflows/railway-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: railway-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli@4
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_ID || secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN secret is not set — skipping deploy."
+            echo "Connect the repo in Railway (Settings → GitHub) or add RAILWAY_TOKEN."
+            exit 0
+          fi
+          if [ -n "$RAILWAY_SERVICE_ID" ]; then
+            railway redeploy --service "$RAILWAY_SERVICE_ID" --yes
+          else
+            railway up --detach --ci
+          fi
