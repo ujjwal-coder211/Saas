@@ -53,7 +53,9 @@ from saas.api.projects import router as projects_router
 from saas.db.connection import saas_db_enabled
 from neuralrouter.chat_service import PUBLIC_MODEL_ID
 from neuralrouter.project_context import enrich_message_with_project, resolve_agent_root
+from neuralrouter.project_access import assert_project_access
 from neuralrouter.work_modes import WorkMode
+from neuralrouter.parity.router import router as parity_router
 
 sys.path.insert(0, str(ROOT_DIR))
 from omni_training.logger import log_interaction, record_feedback  # noqa: E402
@@ -77,6 +79,7 @@ app.include_router(saas_router)
 app.include_router(skills_router)
 app.include_router(threads_router)
 app.include_router(projects_router)
+app.include_router(parity_router)
 
 _web_dir = ROOT_DIR / "web"
 if _web_dir.exists():
@@ -199,7 +202,7 @@ async def _execute_chat(
     request_id = f"req_{uuid.uuid4().hex[:16]}"
 
     if project_id and auth.user_id and saas_db_enabled():
-        _assert_project_access(project_id, auth.user_id)
+        assert_project_access(project_id, auth.user_id)
 
     if auth.user_id:
         try:
@@ -282,21 +285,6 @@ async def _execute_chat(
             logger.exception("Failed to save thread messages")
 
     return result, row_id
-
-
-def _assert_project_access(project_id: str, user_id: str) -> None:
-    from sqlalchemy import text
-
-    from saas.db.connection import db_session
-
-    with db_session() as session:
-        row = session.execute(
-            text("SELECT id FROM projects WHERE id = :id AND user_id = :uid"),
-            {"id": project_id, "uid": user_id},
-        ).first()
-    if not row:
-        raise HTTPException(404, "Project not found")
-
 
 @app.get("/health")
 async def health():
@@ -523,7 +511,7 @@ async def agent_run(
     if body.project_id:
         if not auth.user_id or not saas_db_enabled():
             raise HTTPException(401, "Cloud agent requires SaaS account and DATABASE_URL")
-        _assert_project_access(body.project_id, auth.user_id)
+        assert_project_access(body.project_id, auth.user_id)
         project_root = resolve_agent_root(auth.user_id, body.project_id)
         enriched, rules = enrich_message_with_project(
             body.task,

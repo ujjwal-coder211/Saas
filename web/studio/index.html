@@ -38,6 +38,14 @@
     .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
     .row input, .row select { flex:1; min-width:80px; padding:6px; border-radius:6px; border:1px solid var(--border); background:#0d1117; color:var(--text); font-size:12px; }
     @media (max-width:1100px) { .layout { grid-template-columns: 1fr 1fr; } .threads { display:none; } }
+    #inlineModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; align-items:center; justify-content:center; }
+    #inlineModal.open { display:flex; }
+    #inlineModal .box { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; width:min(520px,92vw); }
+    #inlineModal textarea { width:100%; min-height:60px; margin:8px 0; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px; }
+    #termDrawer { border-top:1px solid var(--border); background:#0d1117; max-height:160px; overflow:auto; font-family:monospace; font-size:12px; padding:8px; display:none; }
+    #termDrawer.open { display:block; }
+    #termInput { width:100%; background:#161b22; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px; font-family:monospace; font-size:12px; }
+    .git-out { font-size:11px; color:var(--muted); white-space:pre-wrap; max-height:100px; overflow:auto; margin-top:6px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
 </head>
@@ -73,7 +81,16 @@
       <div class="row">
         <button class="secondary" onclick="runDeployKit()">Deploy kit</button>
         <button class="secondary" onclick="runSecurityScan()">Security scan</button>
+        <button class="secondary" onclick="runBugbot()">Bugbot review</button>
       </div>
+      <h3 style="margin-top:12px">Git</h3>
+      <div class="row">
+        <button class="secondary" onclick="refreshGit()">Status</button>
+        <button class="secondary" onclick="showGitDiff()">Diff</button>
+      </div>
+      <input id="commitMsg" placeholder="Commit message" style="width:100%;padding:6px;margin-top:6px;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);font-size:12px" />
+      <button class="secondary" style="width:100%;margin-top:4px" onclick="gitCommit()">Commit</button>
+      <pre id="gitOut" class="git-out"></pre>
       <h3 style="margin-top:12px">Files</h3>
       <ul id="fileTree" class="file-tree"></ul>
       <div class="row" style="margin-top:8px">
@@ -87,6 +104,7 @@
 
     <main class="editor-wrap">
       <div id="editor" style="flex:1"></div>
+      <div id="termDrawer"><pre id="termLog"></pre><input id="termInput" placeholder="Terminal: npm test, python main.py, git status..." onkeydown="if(event.key==='Enter')runTermCmd()" /></div>
     </main>
 
     <aside class="chat-panel">
@@ -94,6 +112,7 @@
         <div class="tabs">
           <button id="tabChat" class="tab-active" onclick="setTab('chat')">Chat</button>
           <button id="tabAgent" onclick="setTab('agent')">Agent</button>
+          <button id="tabComposer" onclick="setTab('composer')">Composer</button>
         </div>
         <div class="row">
           <select id="workMode">
@@ -121,12 +140,23 @@
     </aside>
   </div>
 
+  <div id="inlineModal">
+    <div class="box">
+      <strong>Inline edit (Ctrl+K)</strong>
+      <textarea id="inlineInstr" placeholder="What should change in the selection?"></textarea>
+      <div class="row">
+        <button onclick="applyInlineEdit()">Apply</button>
+        <button class="secondary" onclick="closeInline()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const LS_KEY = 'nr_key';
     const LS_THREAD = 'aksh_active_thread';
     const LS_SEARCH = 'aksh_search_mode';
     const LS_WORK = 'aksh_work_mode';
-    let editor = null, activeTab = 'chat';
+    let editor = null, activeTab = 'chat', inlineRange = null;
     let cloudProjectId = null, activeFile = 'README.md', fileCache = {};
     let threadId = localStorage.getItem(LS_THREAD) || null;
     let saveTimer = null;
@@ -168,6 +198,104 @@
     }
 
     async function runSecurityScan() {
+      if (!cloudProjectId) return alert('Select a cloud project first');
+      const res = await api('/saas/v1/projects/' + cloudProjectId + '/security-scan', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return alert(data.detail || JSON.stringify(data));
+      const lines = (data.findings || []).slice(0, 8).map(f => `[${f.severity}] ${f.file}: ${f.message}`).join('\n');
+      addMsg('bot', (data.summary || 'Scan done') + (lines ? '\n\n' + lines : ''));
+    }
+
+    async function runBugbot() {
+      if (!cloudProjectId) return alert('Select a cloud project first');
+      addMsg('bot', 'Bugbot reviewing...');
+      const res = await api('/v1/review/code', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId }) });
+      const data = await res.json();
+      if (!res.ok) return addMsg('bot', 'Error: ' + (data.detail || JSON.stringify(data)));
+      addMsg('bot', (data.summary || '') + '\n\n' + (data.ai_review || JSON.stringify(data.security_scan?.findings?.slice(0,5), null, 2)));
+    }
+
+    async function refreshGit() {
+      if (!cloudProjectId) return alert('Select project');
+      const res = await api('/v1/git/status?project_id=' + encodeURIComponent(cloudProjectId));
+      const data = await res.json();
+      document.getElementById('gitOut').textContent = data.output || data.error || JSON.stringify(data);
+    }
+    async function showGitDiff() {
+      if (!cloudProjectId) return;
+      const res = await api('/v1/git/diff?project_id=' + encodeURIComponent(cloudProjectId));
+      const data = await res.json();
+      document.getElementById('gitOut').textContent = data.output || data.error || '(no diff)';
+    }
+    async function gitCommit() {
+      if (!cloudProjectId) return alert('Select project');
+      const message = document.getElementById('commitMsg').value.trim() || 'Update from Aksh Studio';
+      const res = await api('/v1/git/commit', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId, message }) });
+      const data = await res.json();
+      document.getElementById('gitOut').textContent = data.output || data.error || JSON.stringify(data);
+      await refreshGit();
+    }
+
+    async function runTermCmd() {
+      const input = document.getElementById('termInput');
+      const cmd = input.value.trim();
+      if (!cmd || !cloudProjectId) return alert('Select project and enter command');
+      const log = document.getElementById('termLog');
+      log.textContent += '$ ' + cmd + '\n';
+      input.value = '';
+      const res = await api('/v1/terminal/run', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId, command: cmd }) });
+      const data = await res.json();
+      log.textContent += (data.output || data.error || JSON.stringify(data)) + '\n';
+      log.parentElement.scrollTop = 9999;
+      if (cmd.startsWith('git')) await refreshGit();
+    }
+
+    function openInline() {
+      if (!editor) return;
+      const sel = editor.getSelection();
+      const model = editor.getModel();
+      if (!sel || sel.isEmpty()) return alert('Select code first, then press Ctrl+K');
+      inlineRange = sel;
+      document.getElementById('inlineInstr').value = '';
+      document.getElementById('inlineModal').classList.add('open');
+    }
+    function closeInline() { document.getElementById('inlineModal').classList.remove('open'); inlineRange = null; }
+    async function applyInlineEdit() {
+      const instruction = document.getElementById('inlineInstr').value.trim();
+      if (!instruction || !inlineRange || !editor) return;
+      const model = editor.getModel();
+      const selection = model.getValueInRange(inlineRange);
+      const res = await api('/v1/inline/edit', {
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: cloudProjectId,
+          file_path: activeFile,
+          full_content: model.getValue(),
+          selection,
+          instruction,
+          language: model.getLanguageId(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.detail || JSON.stringify(data));
+      editor.executeEdits('inline', [{ range: inlineRange, text: data.replacement || '' }]);
+      fileCache[activeFile] = editor.getValue();
+      await saveFileNow();
+      closeInline();
+    }
+
+    async function runComposerTask(q) {
+      if (!cloudProjectId) return alert('Select cloud project for Composer');
+      addMsg('user', '[Composer] ' + q);
+      const res = await api('/v1/composer/run', {
+        method: 'POST',
+        body: JSON.stringify({ task: q, project_id: cloudProjectId, rules: fileCache['.akshrules'] || '' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+      addMsg('bot', data.answer + (data.files_changed?.length ? '\nFiles: ' + data.files_changed.join(', ') : ''));
+      await loadCloudProject(cloudProjectId);
+    }
       if (!cloudProjectId) return alert('Select a cloud project first');
       const res = await api('/saas/v1/projects/' + cloudProjectId + '/security-scan', { method: 'POST' });
       const data = await res.json();
@@ -321,13 +449,16 @@
     }
 
     function updateSendLabel() {
-      document.getElementById('sendBtn').textContent = activeTab === 'agent' ? 'Run Agent' : 'Send to Omni';
+      const labels = { chat: 'Send to Omni', agent: 'Run Agent', composer: 'Run Composer' };
+      document.getElementById('sendBtn').textContent = labels[activeTab] || 'Send';
     }
 
     function setTab(tab) {
       activeTab = tab;
       document.getElementById('tabChat').classList.toggle('tab-active', tab === 'chat');
       document.getElementById('tabAgent').classList.toggle('tab-active', tab === 'agent');
+      document.getElementById('tabComposer').classList.toggle('tab-active', tab === 'composer');
+      document.getElementById('termDrawer').classList.toggle('open', tab === 'agent' || tab === 'composer');
       updateSendLabel();
     }
 
@@ -355,6 +486,9 @@
       }
       const rules = fileCache['.akshrules'] || '';
       try {
+        if (activeTab === 'composer') {
+          await runComposerTask(q);
+        } else {
         const path = activeTab === 'agent' ? '/v1/agent/run' : '/v1/chat';
         const body = activeTab === 'agent'
           ? { task: q, file_context, rules, project_id: cloudProjectId, work_mode }
@@ -365,6 +499,8 @@
         addMsg('bot', data.answer || JSON.stringify(data, null, 2));
         if (data.thread_id) threadId = data.thread_id;
         await refreshThreads();
+        if (activeTab === 'agent' && cloudProjectId) await loadCloudProject(cloudProjectId);
+        }
       } catch (e) {
         addMsg('bot', 'Error: ' + e.message);
       }
@@ -377,6 +513,39 @@
         value: '# Aksh Studio\n', language: 'markdown', theme: 'vs-dark', automaticLayout: true,
       });
       editor.onDidChangeModelContent(() => saveFileDebounced());
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => openInline());
+      monaco.languages.registerCompletionItemProvider('*', {
+        triggerCharacters: ['.', '/', '"', "'", ' '],
+        provideCompletionItems: async (model, position) => {
+          const key = document.getElementById('apiKey').value || localStorage.getItem(LS_KEY);
+          if (!key) return { suggestions: [] };
+          const line = model.getLineContent(position.lineNumber);
+          const prefix = line.substring(0, position.column - 1);
+          try {
+            const res = await api('/v1/complete/tab', {
+              method: 'POST',
+              body: JSON.stringify({
+                project_id: cloudProjectId,
+                file_path: activeFile,
+                content: model.getValue(),
+                prefix,
+                line: position.lineNumber,
+                column: position.column,
+              }),
+            });
+            const data = await res.json();
+            if (!data.completion) return { suggestions: [] };
+            return {
+              suggestions: [{
+                label: data.completion.slice(0, 40),
+                kind: monaco.languages.CompletionItemKind.Snippet,
+                insertText: data.completion,
+                range: { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column },
+              }],
+            };
+          } catch { return { suggestions: [] }; }
+        },
+      });
       const savedKey = localStorage.getItem(LS_KEY);
       if (savedKey) document.getElementById('apiKey').value = savedKey;
       const savedSearch = localStorage.getItem(LS_SEARCH);

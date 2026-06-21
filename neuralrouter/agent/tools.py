@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from neuralrouter.deploy.kit import generate_deploy_kit
+from neuralrouter.parity.git import git_commit, git_diff, git_status
+from neuralrouter.parity.terminal import run_terminal
 from neuralrouter.security.scan import scan_project
 
 ALLOWED_TOOLS = (
@@ -16,6 +18,10 @@ ALLOWED_TOOLS = (
     "list_files",
     "generate_deploy_kit",
     "security_scan",
+    "run_terminal",
+    "git_status",
+    "git_diff",
+    "git_commit",
 )
 
 
@@ -135,4 +141,12 @@ def run_tool(
         return generate_deploy_kit_tool(project_root, args.get("project_name", "app"))
     if name == "security_scan":
         return security_scan_tool(project_root)
+    if name == "run_terminal":
+        return run_terminal(project_root, args.get("command", ""))
+    if name == "git_status":
+        return git_status(project_root)
+    if name == "git_diff":
+        return git_diff(project_root, args.get("path", "."))
+    if name == "git_commit":
+        return git_commit(project_root, args.get("message", "Aksh agent commit"))
     return {"ok": False, "error": "Unhandled tool"}

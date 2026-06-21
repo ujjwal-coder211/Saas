@@ -97,6 +97,16 @@ async def create_project(
         )
     write_file(user_id, project_id, "README.md", f"# {name}\n\nCreated with Aksh Studio.\n")
     write_file(user_id, project_id, ".akshrules", "Be concise. Prefer working code.\n")
+    write_file(
+        user_id,
+        project_id,
+        ".aksh/mcp.json",
+        '{\n  "mcpServers": {}\n}\n',
+    )
+    from neuralrouter.parity.git import ensure_git_repo
+    from saas.storage.projects import project_root_path
+
+    ensure_git_repo(project_root_path(user_id, project_id))
     return {"id": project_id, "name": name}
 
 
