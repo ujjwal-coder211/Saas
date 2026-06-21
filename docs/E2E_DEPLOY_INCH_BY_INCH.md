@@ -2,7 +2,7 @@
 
 **Repo:** https://github.com/ujjwal-coder211/Saas  
 **Docker files:** `Dockerfile` + `docker-compose.prod.yml`  
-**Marketing site (waitlist):** separate repo `Aitotech` on Vercel — not this Docker stack.
+**Marketing site (aitotech.in):** separate repo `Aitotech` — Docker on same E2E VM. Guide: https://github.com/ujjwal-coder211/Aitotech/blob/main/docs/E2E_DEPLOY.md
 
 ---
 
