@@ -1,0 +1,18 @@
+{
+  "exported_at": "2026-06-25T12:05:04.272754+00:00",
+  "dataset_file": "conductor_v1_train.jsonl",
+  "row_count": 2154,
+  "routing": 1151,
+  "synthesis": 313,
+  "cot": 690,
+  "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
+  "adapter_start": "Ujjwal211/aitotech-omni-v1",
+  "adapter_push": "Ujjwal211/aitotech-omni-v2",
+  "colab_steps": [
+    "Upload colab_export.zip to Colab",
+    "Open deploy/colab/OMNI_CONDUCTOR_TRAIN.md and run cells",
+    "Train on conductor_v1_train.jsonl",
+    "Push adapter to HuggingFace",
+    "brain_register.py omni-v2 \u2192 brain_promote after RunPod deploy"
+  ]
+}
