@@ -17,11 +17,12 @@
       "label": "Omni v1 LoRA",
       "type": "lora_hf",
       "status": "candidate",
-      "description": "First trained Omni adapter — promote when eval passes your checklist.",
+      "description": "First trained Omni adapter — Nemotron-Nano-30B fine-tuned on RunPod. Promote when eval passes your checklist.",
       "artifact": {
         "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
         "adapter_repo": "Ujjwal211/aitotech-omni-v1",
-        "adapter_path": null
+        "adapter_path": null,
+        "train_platform": "runpod"
       },
       "metrics": {
         "eval_score": null,

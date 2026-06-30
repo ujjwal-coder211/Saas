@@ -101,8 +101,12 @@ Tab tak routing rules-based hi rahega.
 ## 5. Roadmap — bache hue steps (order mein)
 
 - **Step 0 ✅** — current data export commit karna (cot/routing/synthesis `.jsonl`; bade `.zip` ignore).
-- **Step 1 (USER ka kaam)** — Omni v2 ko Colab par train karna. Sirf user kar sakta hai (Google login chahiye).
-  Notebook ready: `deploy/colab/README_COLAB_ONE_CLICK.md` → A100 → `HF_TOKEN` secret → Run all → push `Ujjwal211/aitotech-omni-v2`.
+- **Step 1 (USER ka kaam) — PLATFORM CHANGED (2026-06-30):** base model wahi **Nemotron-Nano-30B**
+  (no change), bas training ab **RunPod** par hogi (pehle Google Colab thi).
+  Flow: Nemotron-Nano-30B → RunPod GPU pod par LoRA/QLoRA fine-tune → adapter HF par push
+  (`Ujjwal211/aitotech-omni-v1`) → `brain_registry.json` mein candidate register.
+  - Colab notebook (`deploy/colab/`) ab secondary/fallback path hai.
+  - RunPod ke liye env: `HF_TOKEN` + `RUNPOD_API_KEY` (ref: `deploy/colab/README_COLAB_ONE_CLICK.md` ka "Alternative (no Colab)").
 - **Step 2 (NEXT CODE — #1 gap)** — trained brain ko routing mein wire karna (upar section 4 dekho).
 - **Step 3** — `brain_eval.py` se eval, threshold (>2% RA) pass hone par `brain_promote.py` se `active_version_id` flip.
 - **Step 4 ✅** — RLEF reward logging (is session mein ho gaya).
@@ -131,4 +135,11 @@ Tab tak routing rules-based hi rahega.
 
 ---
 
-_Last updated: 2026-06-30 — session: Harness browser/system tools + RLEF reward logging add kiye._
+## 8. Plan change log
+
+- **2026-06-30** — Training platform **Google Colab → RunPod**. Base model **Nemotron-Nano-30B (unchanged)**.
+  (GLM 5.2 wala plan socha tha, phir cancel — base model same rakha, sirf platform RunPod kiya.)
+
+---
+
+_Last updated: 2026-06-30 — session: Harness browser/system tools + RLEF reward logging; plan change → GLM 5.2 open weights on RunPod._
