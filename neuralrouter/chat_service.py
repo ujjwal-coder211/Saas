@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from omni_training.model_analyzer import analyze_model_behavior
+from omni_training.rlef import build_and_log
 from omni_training.schema import ResponsePattern
 
 from neuralrouter.model_clients import call_model
@@ -202,6 +203,31 @@ async def run_chat(
             logger.exception("Aksh Search failed — continuing without web context")
 
     result = await _run_with_plan(plan)
+
+    # RLEF: log a RoutingRecord for every turn (paper §5.2.3 / §7.5.1). Best-effort —
+    # never let reward logging affect the user's response.
+    try:
+        alignments = [
+            b.get("registry_style_alignment", 0.0)
+            for b in result.sub_model_responses
+            if isinstance(b, dict)
+        ]
+        quality_alignment = sum(alignments) / len(alignments) if alignments else 0.5
+        build_and_log(
+            query=message,
+            task_type=f"{plan.work_mode}:{plan.output_style}",
+            models=result.all_experts_used,
+            collaborative=result.collaborative,
+            answer=result.answer,
+            quality_alignment=quality_alignment,
+            latency_s=result.response_time_s,
+            tokens=result.tokens,
+            brain_version_id=plan.brain_version_id,
+            user_id=user_id,
+        )
+    except Exception:
+        logger.debug("RLEF logging skipped", exc_info=True)
+
     scope = build_scope(work_mode, message)
     if scope.mode != "auto" and not result.answer.startswith("[Aksh"):
         result.answer = f"{scope_confirmation(scope)}\n\n{result.answer}"

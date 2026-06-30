@@ -7,9 +7,37 @@ from pathlib import Path
 from typing import Any
 
 from neuralrouter.deploy.kit import generate_deploy_kit
+from neuralrouter.parity.browser import (
+    browser_click,
+    browser_execute,
+    browser_extract,
+    browser_navigate,
+    browser_open,
+    browser_screenshot,
+    browser_type,
+    browser_wait,
+)
 from neuralrouter.parity.git import git_commit, git_diff, git_status
+from neuralrouter.parity.system_tools import (
+    manage_clipboard,
+    notify,
+    open_app,
+    screenshot_region,
+)
 from neuralrouter.parity.terminal import run_terminal
 from neuralrouter.security.scan import scan_project
+
+# Harness write-class tools gated by work-mode read-only scope.
+_WRITE_TOOLS = {
+    "write_file",
+    "generate_deploy_kit",
+    "browser_click",
+    "browser_type",
+    "browser_execute",
+    "open_app",
+    "manage_clipboard",
+    "notify",
+}
 
 ALLOWED_TOOLS = (
     "read_file",
@@ -22,6 +50,20 @@ ALLOWED_TOOLS = (
     "git_status",
     "git_diff",
     "git_commit",
+    # Browser tools (Harness §4.2.2 — CDP via Playwright)
+    "browser_open",
+    "browser_navigate",
+    "browser_click",
+    "browser_type",
+    "browser_extract",
+    "browser_screenshot",
+    "browser_wait",
+    "browser_execute",
+    # System tools (Harness §4.2.3)
+    "open_app",
+    "manage_clipboard",
+    "notify",
+    "screenshot_region",
 )
 
 
@@ -126,7 +168,7 @@ def run_tool(
     if name not in ALLOWED_TOOLS:
         return {"ok": False, "error": f"Unknown tool: {name}"}
 
-    if name in ("write_file", "generate_deploy_kit") and not allow_write:
+    if name in _WRITE_TOOLS and not allow_write:
         return {"ok": False, "error": f"Tool {name} blocked by work mode (read-only scope)"}
 
     if name == "read_file":
@@ -149,4 +191,37 @@ def run_tool(
         return git_diff(project_root, args.get("path", "."))
     if name == "git_commit":
         return git_commit(project_root, args.get("message", "Aksh agent commit"))
+
+    # Browser tools (Harness §4.2.2)
+    if name == "browser_open":
+        return browser_open(args.get("url", ""))
+    if name == "browser_navigate":
+        return browser_navigate(args.get("url", ""))
+    if name == "browser_click":
+        return browser_click(args.get("selector", ""))
+    if name == "browser_type":
+        return browser_type(args.get("selector", ""), args.get("text", ""))
+    if name == "browser_extract":
+        return browser_extract(args.get("selector", ""))
+    if name == "browser_screenshot":
+        return browser_screenshot(bool(args.get("full_page", True)))
+    if name == "browser_wait":
+        return browser_wait(args.get("condition", "networkidle"))
+    if name == "browser_execute":
+        return browser_execute(args.get("js", ""))
+
+    # System tools (Harness §4.2.3)
+    if name == "open_app":
+        return open_app(args.get("name", ""))
+    if name == "manage_clipboard":
+        return manage_clipboard(args.get("action", ""), args.get("content", ""))
+    if name == "notify":
+        return notify(args.get("title", "Saira"), args.get("message", ""))
+    if name == "screenshot_region":
+        return screenshot_region(
+            int(args.get("x", 0)),
+            int(args.get("y", 0)),
+            int(args.get("w", 0)),
+            int(args.get("h", 0)),
+        )
     return {"ok": False, "error": "Unhandled tool"}

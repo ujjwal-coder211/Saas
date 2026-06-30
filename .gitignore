@@ -8,6 +8,7 @@ __pycache__/
 
 omni_training/data/*.jsonl
 omni_training/data/vault/
+omni_training/data/rlef/
 !omni_training/data/.gitkeep
 
 .DS_Store
