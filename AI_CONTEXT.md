@@ -98,9 +98,38 @@ Tab tak routing rules-based hi rahega.
 
 ---
 
+## 4.5 Saira Harvest — training-data harvesting engine (NEW component, 2026-06-30)
+
+Ek production-grade **async batch LLM harvesting engine** — ab repo mein `omni_training/harvest/` ke andar
+integrate ho chuka (2026-06-30). Yeh Omni ke **training data pipeline** ka scale engine hai — model pool ko
+bade paimane par query karke SFT / synthesis datasets aur routing labels banata hai
+(paper §7.4: "run each task through all models in pool, measure R scores" ka exact tool).
+
+**Features:**
+- Producer/consumer worker pool crawler (`src/engine/crawler.py`) — unbounded `asyncio.gather` flood nahi.
+- Per-model 3-state **circuit breaker** (CLOSED→OPEN→HALF_OPEN) — ek failing model poora run down na kare.
+- **Adaptive concurrency** scheduler — success par workers badhte, failure par ghatte (`min/max_workers`).
+- **Atomic batched JSONL writer** + fsync — crash mein max ek batch loss.
+- **SQLite dedupe ledger** + usage/cost table — safe re-runs, per-call token cost record.
+- Token/cost tracking + structured JSON logging. Secrets sirf `OPENROUTER_API_KEY` env se.
+
+**Stack:** `aiosqlite`, `httpx`, `PyYAML`. OpenRouter-compatible endpoint.
+**Run (harvest folder se):** `cd omni_training/harvest && python -m src.main --queries queries.txt --config config/settings.yaml`
+→ output `reservoir.jsonl` + `state.db`. Deps: `pip install -r omni_training/harvest/requirements.txt`
+(aiosqlite + PyYAML main `requirements.txt` mein bhi merge kiye).
+
+**Saira mein role:** yeh harvest ka `reservoir.jsonl` → `omni_training/` ke dataset builders
+(`build_conductor_dataset.py` / `build_dataset.py` / `ingest_post_train.py`) mein feed hoga → RunPod par Omni training.
+
+**TODO (next):** `reservoir.jsonl` → dataset-builder format ka adapter likhna (harvest output ko conductor/routing/synthesis JSONL mein convert).
+
+---
+
 ## 5. Roadmap — bache hue steps (order mein)
 
 - **Step 0 ✅** — current data export commit karna (cot/routing/synthesis `.jsonl`; bade `.zip` ignore).
+- **Step 0.5 ✅ (integrate done)** — **Saira Harvest** engine `omni_training/harvest/` mein aa gaya.
+  Baaki: `reservoir.jsonl` → dataset-builder format adapter, phir model pool query → RunPod training.
 - **Step 1 (USER ka kaam) — PLATFORM CHANGED (2026-06-30):** base model wahi **Nemotron-Nano-30B**
   (no change), bas training ab **RunPod** par hogi (pehle Google Colab thi).
   Flow: Nemotron-Nano-30B → RunPod GPU pod par LoRA/QLoRA fine-tune → adapter HF par push
@@ -139,6 +168,9 @@ Tab tak routing rules-based hi rahega.
 
 - **2026-06-30** — Training platform **Google Colab → RunPod**. Base model **Nemotron-Nano-30B (unchanged)**.
   (GLM 5.2 wala plan socha tha, phir cancel — base model same rakha, sirf platform RunPod kiya.)
+- **2026-06-30** — **Saira Harvest** engine repo mein integrate kiya (`omni_training/harvest/`, 18 files,
+  `.pytest_cache` chhod ke) — Omni ke liye scale par training-data harvesting tool (section 4.5 + Step 0.5).
+  `aiosqlite` + `PyYAML` main requirements mein merge.
 
 ---
 

@@ -1,0 +1,47 @@
+# saira_harvest/config/settings.yaml
+# Central configuration. No secrets live here — API keys come from env vars only.
+
+api:
+  base_url: "https://openrouter.ai/api/v1/chat/completions"
+  # The actual key is read from the OPENROUTER_API_KEY environment variable.
+  # It is never accepted via CLI args or committed to this file.
+  timeout_seconds: 60
+  connect_timeout_seconds: 10
+  max_retries: 5
+  retry_base_delay: 2.0        # exponential backoff base (seconds)
+
+concurrency:
+  min_workers: 10
+  max_workers: 100
+  start_workers: 50
+  max_connections: 50
+  max_keepalive_connections: 20
+  # Adaptive scheduler tuning
+  scale_up_success_streak: 20      # consecutive successes before adding a worker
+  scale_down_failure_streak: 5     # consecutive failures before removing a worker
+
+circuit_breaker:
+  failure_threshold: 5          # failures before opening the circuit
+  open_seconds: 60              # how long to stay OPEN before probing (HALF_OPEN)
+  half_open_max_probes: 1        # probes allowed while HALF_OPEN
+
+storage:
+  db_path: "state.db"
+  output_path: "reservoir.jsonl"
+  batch_size: 20                 # records buffered before an atomic flush
+  flush_interval_seconds: 2.0
+
+logging:
+  level: "INFO"
+  json: true
+  file: "harvest.log"
+
+models:
+  - "openrouter/auto"
+
+# Approximate USD cost per 1K tokens, used for cost estimation/tracking.
+# Update as needed — these are illustrative defaults, not guarantees of accuracy.
+pricing:
+  default:
+    prompt_per_1k: 0.0
+    completion_per_1k: 0.0
