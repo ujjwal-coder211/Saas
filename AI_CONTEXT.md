@@ -133,9 +133,12 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 - **Step 1 (USER ka kaam) — PLATFORM CHANGED (2026-06-30):** base model wahi **Nemotron-Nano-30B**
   (no change), bas training ab **RunPod** par hogi (pehle Google Colab thi).
   Flow: Nemotron-Nano-30B → RunPod GPU pod par LoRA/QLoRA fine-tune → adapter HF par push
-  (`Ujjwal211/aitotech-omni-v1`) → `brain_registry.json` mein candidate register.
+  (`Ujjwal211/aitotech-omni-v2`) → `brain_registry.json` mein candidate register.
+  - **RunPod kit ready:** `deploy/runpod/` — `train_omni.py` (standalone QLoRA script, env-driven),
+    `setup.sh` (deps), `README_RUNPOD.md` (exact step-by-step). Data repo mein committed
+    (`conductor_v1_train.jsonl`, 2154 rows), to pod par sirf `git clone` + 4 commands.
+  - Pod par: `bash deploy/runpod/setup.sh` → `export HF_TOKEN=...` → `python deploy/runpod/train_omni.py`.
   - Colab notebook (`deploy/colab/`) ab secondary/fallback path hai.
-  - RunPod ke liye env: `HF_TOKEN` + `RUNPOD_API_KEY` (ref: `deploy/colab/README_COLAB_ONE_CLICK.md` ka "Alternative (no Colab)").
 - **Step 2 (NEXT CODE — #1 gap)** — trained brain ko routing mein wire karna (upar section 4 dekho).
 - **Step 3** — `brain_eval.py` se eval, threshold (>2% RA) pass hone par `brain_promote.py` se `active_version_id` flip.
 - **Step 4 ✅** — RLEF reward logging (is session mein ho gaya).
@@ -171,6 +174,8 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 - **2026-06-30** — **Saira Harvest** engine repo mein integrate kiya (`omni_training/harvest/`, 18 files,
   `.pytest_cache` chhod ke) — Omni ke liye scale par training-data harvesting tool (section 4.5 + Step 0.5).
   `aiosqlite` + `PyYAML` main requirements mein merge.
+- **2026-06-30** — **RunPod training kit** banaya (`deploy/runpod/`): `train_omni.py` + `setup.sh` +
+  `README_RUNPOD.md`. Ab Omni training pod par `git clone` + 4 commands se chalti hai (Colab ke bajaye).
 
 ---
 
