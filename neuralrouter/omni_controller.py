@@ -12,6 +12,7 @@ from typing import Literal
 
 from neuralrouter.router import ExpertMatch, activate_experts, manual_expert
 from neuralrouter.search.web_search import SearchResult, needs_web_search
+from neuralrouter.omni_brain.confidence import self_assess, threshold_for
 from neuralrouter.omni_brain.loader import active_brain_summary, brain_directives_for_plan
 from neuralrouter.work_modes import WorkMode, build_scope, routing_query_boost
 
@@ -36,6 +37,8 @@ class OmniPlan:
     reasoning: str = ""
     brain_version_id: str = "omni-rules-v0"
     brain_type: str = "rules"
+    confidence: float = 0.6
+    self_handled: bool = False
 
     @property
     def primary_model(self) -> str:
@@ -99,6 +102,14 @@ def plan_turn(
     elif style == "code":
         directives.append("Prefer working code blocks with brief explanation.")
 
+    # Confidence-based self-routing (paper v4 §3.3). Heuristic self-assessment:
+    # high confidence + low stakes → Omni can self-handle; else delegate to a teacher.
+    assess_type = "code" if style == "code" else "general"
+    confidence = self_assess(query, assess_type)
+    bar = threshold_for(assess_type)
+    self_handled = confidence >= bar and not force_model
+    reasoning += f"; confidence={confidence:.2f}/{bar:.2f} self_handled={self_handled}"
+
     effective_search = search_mode
     if scope.mode == "explain" and search_mode == "auto":
         effective_search = "off"
@@ -123,6 +134,8 @@ def plan_turn(
         reasoning=reasoning,
         brain_version_id=brain_id,
         brain_type=brain_type,
+        confidence=confidence,
+        self_handled=self_handled,
     )
 
 
@@ -142,6 +155,8 @@ def apply_search_context(plan: OmniPlan, result: SearchResult) -> OmniPlan:
         reasoning=plan.reasoning + f"; search_hits={len(result.snippets)}",
         brain_version_id=plan.brain_version_id,
         brain_type=plan.brain_type,
+        confidence=plan.confidence,
+        self_handled=plan.self_handled,
     )
 
 

@@ -15,6 +15,7 @@ from omni_training.schema import ResponsePattern
 from neuralrouter.model_clients import call_model
 from neuralrouter.omni_controller import OmniPlan, apply_search_context, build_system_prompt, plan_turn
 from neuralrouter.omni_brain.loader import omni_native_plan_hint
+from neuralrouter.omni_brain.refine import refine
 from neuralrouter.project_context import enrich_message_with_project
 from neuralrouter.router import REGISTRY, confidence_for
 from neuralrouter.search.web_search import aksh_search
@@ -41,6 +42,8 @@ class ChatResult:
     sub_model_responses: list[dict] = field(default_factory=list)
     omni_plan: dict | None = None
     web_search_used: bool = False
+    verified: bool | None = None
+    verification_issues: list = field(default_factory=list)
 
 
 def _behavior_summary(model_id: str, expert_id: str, content: str) -> dict:
@@ -120,6 +123,9 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
     elapsed = round(time.time() - start, 2)
     internal_experts = [e.model_id for e in experts]
 
+    # Refinement layer (paper v4 §3.4): verify the answer as a draft before returning.
+    verification = refine(final_answer, plan.output_style, plan.query)
+
     return ChatResult(
         answer=final_answer,
         brain_used=PUBLIC_MODEL_ID,
@@ -140,8 +146,12 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
             "scope_summary": plan.scope_summary,
             "brain_version_id": plan.brain_version_id,
             "brain_type": plan.brain_type,
+            "confidence": plan.confidence,
+            "self_handled": plan.self_handled,
         },
         web_search_used=bool(plan.search_context),
+        verified=verification["verified"],
+        verification_issues=verification["issues"],
     )
 
 
@@ -188,11 +198,15 @@ async def run_chat(
             search_mode=plan.search_mode,
             output_style=plan.output_style,
             collaborative=plan.collaborative,
+            work_mode=plan.work_mode,
+            scope_summary=plan.scope_summary,
             system_directives=plan.system_directives + [hint],
             search_context=plan.search_context,
             reasoning=plan.reasoning + "; omni_inference_hint=on",
             brain_version_id=plan.brain_version_id,
             brain_type=plan.brain_type,
+            confidence=plan.confidence,
+            self_handled=plan.self_handled,
         )
 
     if plan.use_web_search:
@@ -224,6 +238,9 @@ async def run_chat(
             tokens=result.tokens,
             brain_version_id=plan.brain_version_id,
             user_id=user_id,
+            # Refinement verification as a real R_exec signal — trust it as a
+            # negative only when the refiner actually found issues.
+            exec_success=(False if result.verified is False else None),
         )
     except Exception:
         logger.debug("RLEF logging skipped", exc_info=True)

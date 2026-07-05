@@ -15,20 +15,26 @@ jiska dimaag **Omni** conductor model hai. Omni har task ke liye best free LLM c
 
 - GitHub: https://github.com/ujjwal-coder211/Saas
 - Local repo: `C:\Users\ujjwa\Saas`
-- Research paper: `Saira_Research_Paper_v2.docx` (Downloads mein) — yeh full architecture spec hai.
+- Research paper: **`Saira_Research_Paper_v4.docx`** (Downloads mein) — latest spec. (v2 purana hai.)
+  v4 mein Omni ab **Conductor + Executor + Learner** hai (sirf router nahi): confidence-based
+  self-routing (§3.3), refinement layer (§3.4), multi-source distillation (§3.5). Aur 5 naye sections:
+  **Security §5, Failure Modes §12, Enterprise/B2B §13, Future of Work §14, Competitive Moat §15.**
+  Note: **GLM-5.2 base model NAHI** — ye ek open-weight *delegate teacher* hai (Nemotron-Nano-30B hi base rahega).
 
 ---
 
 ## 2. Paper vs Repo — abhi kahaan khade hain (gap analysis)
 
-| Paper layer | Status | Kahaan hai code |
+| Paper layer (v4) | Status | Kahaan hai code |
 |---|---|---|
-| **Omni — Cognition** | 🟡 Sirf rules-based (paper §8.1 cold-start heuristic). Trained 30B model abhi wire nahi hua. | `neuralrouter/omni_controller.py`, `neuralrouter/omni_brain/loader.py`, `omni_training/` |
-| **Harness — Execution** | 🟢 File/shell/git + **ab browser + system tools bhi** (is session mein add hue). | `neuralrouter/agent/tools.py`, `neuralrouter/parity/` |
-| **Hermes — Memory** | 🟡 Threads + skills storage hai; RLEF reward logging **ab add ho gaya**. | `saas/api/threads.py`, `saas/api/skills.py`, `omni_training/skill_ingest.py` |
-| **RLEF self-evolution** | 🟢 Pehle sirf scaffold tha, **ab loop close ho gaya** (logging + collect_cycle). | `omni_training/rlef.py` (NEW) |
-| **Voice (STT/TTS)** | 🔴 Abhi tak nahi bana. | — |
-| **Monetization (tier-gated routing)** | 🟢 Ban chuka. | `saas/billing/plans.py` |
+| **Omni — Cognition (Conductor+Executor+Learner)** | 🟡 Rules routing + **ab confidence self-assess (§3.3) + refine (§3.4) bhi** (port ho gaya). Trained 30B model abhi wire nahi. | `neuralrouter/omni_controller.py`, `omni_brain/confidence.py` + `refine.py` (NEW), `omni_brain/loader.py`, `omni_training/` |
+| **Harness — Execution** | 🟢 File/shell/git + browser + system tools. | `neuralrouter/agent/tools.py`, `neuralrouter/parity/` |
+| **Hermes — Memory** | 🟡 Threads + skills storage; RLEF reward logging. | `saas/api/threads.py`, `saas/api/skills.py`, `omni_training/skill_ingest.py` |
+| **RLEF self-evolution (§7)** | 🟢 Loop close (logging + collect_cycle); ab R_exec ko refine verification feed karta hai. | `omni_training/rlef.py` |
+| **Security & Trust (§5) [v4 NEW]** | 🔴 Permission gate / vault / injection firewall abhi nahi. | — |
+| **Failure Modes (§12) [v4 NEW]** | 🔴 Catalog + mitigations abhi nahi. | — |
+| **Enterprise/B2B (§13) [v4 NEW]** | 🟡 Tier-gated routing hai; on-prem/RBAC/audit nahi. | `saas/billing/plans.py` |
+| **Voice (§8)** | 🔴 Abhi tak nahi bana. | — |
 
 **Honest verdict:** Body (Harness + SaaS + tier gating) aur training rig (dataset pipeline + Colab notebook +
 brain hot-swap registry) ban chuke hain. Asli missing cheez = **trained brain khud** + voice + (ab tak)
@@ -95,6 +101,22 @@ nahi kar paata.
 
 ➡️ **Next code step (Step 2):** `plan_turn` / `run_chat` ko aise banana ki native hint experts ko override kare.
 Tab tak routing rules-based hi rahega.
+
+### 4.1 Omni Phase-1 port (2026-07-05) — confidence + refine
+
+`saira_harvest_1.zip` ke `src/omni/` (v4 §3.3/§3.4) ko `neuralrouter/omni_brain/` mein port kiya:
+- **`confidence.py`** — `self_assess(query, task_type)` (lexical + optional historical blend) + `threshold_for()`.
+  `omni_controller.plan_turn` ab har turn ke liye confidence + `self_handled` decide karke `OmniPlan` par set karta hai.
+- **`refine.py`** — `refine(draft)` deterministic verification (Python syntax check, TODO/placeholder detection).
+  `chat_service._run_with_plan` ab answer ko refine karke `ChatResult.verified` + `verification_issues` set karta hai,
+  aur ye verification **RLEF ke R_exec signal** mein feed hota hai (pehle sirf proxy tha — ab real).
+- **Note:** `saira_harvest_1.zip` `omni_training/harvest/` (jo committed hai) ka bada superset hai. Humne
+  Omni *logic* port kiya (do parallel Omni maintain nahi karna); `omni_training/harvest/` abhi Phase-0-only stale copy hai.
+
+⚠️ **Regression recovery (2026-07-05):** ek external tool (shayad Cursor) ne working-tree ke `tools.py` +
+`chat_service.py` ko purane version par revert kar diya tha (browser tools + RLEF gayab). Committed HEAD safe tha —
+dono HEAD se restore karke port dubara clean apply kiya. **Sabak: kaam ke beech Cursor/dusre editor repo par
+git ops mat chalao, warna working tree revert ho sakta hai.**
 
 ---
 
@@ -176,6 +198,10 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
   `aiosqlite` + `PyYAML` main requirements mein merge.
 - **2026-06-30** — **RunPod training kit** banaya (`deploy/runpod/`): `train_omni.py` + `setup.sh` +
   `README_RUNPOD.md`. Ab Omni training pod par `git clone` + 4 commands se chalti hai (Colab ke bajaye).
+- **2026-07-05** — Paper **v2 → v4** re-sync. Omni ab Conductor+Executor+Learner. `saira_harvest_1` ka
+  Phase-1 Omni logic (confidence + refine) `neuralrouter/omni_brain/` mein port; refine ab RLEF R_exec feed karta hai.
+  v4 ke naye sections (Security §5, Failure Modes §12, Enterprise §13, Future of Work §14, Moat §15) abhi 🔴 pending.
+- **2026-07-05** — External-tool regression se `tools.py`+`chat_service.py` recover kiye (HEAD se restore).
 
 ---
 
