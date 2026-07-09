@@ -35,7 +35,7 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 | Item | State | Where |
 |---|---|---|
 | Harness tools (code/browser/system), MCP-style, stateless | ✅ | `agent/tools.py` (22 tools), `parity/` |
-| Hermes skill extraction + user model + curation | 🟡 | `saas/api/skills.py`, `skill_ingest.py`; 7-day curator not scheduled |
+| Hermes skill extraction + user model + curation | ✅ | `skill_ingest.py` + `skill_curator.py` (grade/prune/merge/promote); run curator on a 7-day cron |
 
 ## §6 Security & Trust
 
