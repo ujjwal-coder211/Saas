@@ -1,22 +1,23 @@
 {
-  "active_version_id": "sarva-rules-v0",
-  "updated_at": "2026-07-09T00:00:00+00:00",
+  "active_version_id": "sarva-v2",
+  "updated_at": "2026-07-09T18:19:01.080871+00:00",
   "versions": {
     "sarva-rules-v0": {
       "id": "sarva-rules-v0",
       "label": "Sarva Hybrid (rules + reasoning)",
       "type": "rules",
-      "status": "active",
+      "status": "archived",
       "description": "Hybrid keyword rules + confidence reasoning + capability bounds. Active until trained LoRA is served + promoted.",
       "artifact": null,
       "metrics": {},
-      "created_at": "2026-06-20T00:00:00+00:00"
+      "created_at": "2026-06-20T00:00:00+00:00",
+      "archived_at": "2026-07-09T18:19:01.080824+00:00"
     },
     "sarva-v2": {
       "id": "sarva-v2",
       "label": "Sarva Conductor v2 (Qwen2.5-14B QLoRA)",
       "type": "lora_hf",
-      "status": "candidate",
+      "status": "active",
       "description": "TRAINED + pushed to HF (2026-07-09, RunPod A40, 3 epochs on sarva_master_train). Live-tested: correct confidence-gated routing. To activate: serve deploy/runpod/serve_sarva.py, set SARVA_INFERENCE_URL, then scripts/plug_sarva_after_train.py --promote --approve. NOTE: base is Qwen2.5-14B (paper's Nemotron-30B is nemotron_h hybrid, not Unsloth-trainable).",
       "artifact": {
         "base_model": "unsloth/Qwen2.5-14B-Instruct-bnb-4bit",
@@ -27,10 +28,11 @@
       },
       "metrics": {
         "eval_score": null,
-        "manual_approved": false
+        "manual_approved": true
       },
       "trained_at": "2026-07-09T00:00:00+00:00",
-      "created_at": "2026-07-09T00:00:00+00:00"
+      "created_at": "2026-07-09T00:00:00+00:00",
+      "promoted_at": "2026-07-09T18:19:01.080866+00:00"
     }
   }
 }
