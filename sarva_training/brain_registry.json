@@ -1,13 +1,13 @@
 {
   "active_version_id": "sarva-rules-v0",
-  "updated_at": "2026-06-20T00:00:00+00:00",
+  "updated_at": "2026-07-09T00:00:00+00:00",
   "versions": {
     "sarva-rules-v0": {
       "id": "sarva-rules-v0",
-      "label": "Sarva Controller (rules)",
+      "label": "Sarva Hybrid (rules + reasoning)",
       "type": "rules",
       "status": "active",
-      "description": "Heuristic controller — routes experts, search, style until trained brain promoted.",
+      "description": "Hybrid keyword rules + confidence reasoning + capability bounds. Active until trained LoRA is promoted after RunPod.",
       "artifact": null,
       "metrics": {},
       "created_at": "2026-06-20T00:00:00+00:00"
@@ -17,7 +17,7 @@
       "label": "Sarva v1 LoRA",
       "type": "lora_hf",
       "status": "candidate",
-      "description": "First trained Sarva adapter — Nemotron-Nano-30B fine-tuned on RunPod. Promote when eval passes your checklist.",
+      "description": "First trained Sarva adapter slot — Nemotron-Nano-30B. Promote when eval passes.",
       "artifact": {
         "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
         "adapter_repo": "Ujjwal211/aitotech-sarva-v1",
@@ -30,6 +30,26 @@
       },
       "trained_at": null,
       "created_at": "2026-06-20T00:00:00+00:00"
+    },
+    "sarva-v2": {
+      "id": "sarva-v2",
+      "label": "Sarva Conductor v2",
+      "type": "lora_hf",
+      "status": "candidate",
+      "description": "Target slot for next RunPod QLoRA train (master train JSONL). After HF push: scripts/plug_sarva_after_train.py --promote --approve. Serve with deploy/runpod/serve_sarva.py and set SARVA_INFERENCE_URL.",
+      "artifact": {
+        "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
+        "adapter_repo": "Ujjwal211/aitotech-sarva-v2",
+        "adapter_path": null,
+        "train_platform": "runpod",
+        "data_primary": "sarva_training/data/export/sarva_master_train.jsonl"
+      },
+      "metrics": {
+        "eval_score": null,
+        "manual_approved": false
+      },
+      "trained_at": null,
+      "created_at": "2026-07-09T00:00:00+00:00"
     }
   }
 }

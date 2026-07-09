@@ -212,6 +212,45 @@ def build_and_log(
         return None
 
 
+def historical_self_success(task_type: str | None = None, *, ledger: Path | None = None) -> float | None:
+    """Empirical self-handle / routing success prior for confidence blend (paper §13).
+
+    Returns mean of R_exec proxies in [0,1] for matching task_type prefix, or None
+    if the ledger has too few rows. Used by hybrid routing so confidence can shift
+    as RLEF data accumulates — without claiming a trained head yet.
+    """
+    path = ledger or LEDGER_PATH
+    if not path.exists():
+        return None
+    rewards: list[float] = []
+    try:
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if task_type:
+                    tt = str(row.get("task_type") or "")
+                    # Match prefix e.g. "ship:prose:general" vs "general"
+                    if task_type not in tt and not tt.endswith(f":{task_type}"):
+                        continue
+                comps = row.get("reward_components") or {}
+                r_exec = comps.get("R_exec")
+                if r_exec is None:
+                    # Fall back: ok execution_result → 1.0
+                    r_exec = 1.0 if row.get("execution_result") == "ok" else 0.0
+                rewards.append(float(r_exec))
+    except OSError:
+        return None
+    if len(rewards) < 5:
+        return None
+    return round(sum(rewards) / len(rewards), 4)
+
+
 def collect_cycle(
     *,
     ledger: Path | None = None,

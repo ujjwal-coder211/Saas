@@ -13,13 +13,19 @@ from sarva_training.rlef import build_and_log
 from sarva_training.schema import ResponsePattern
 
 from neuralrouter.model_clients import call_model
-from neuralrouter.sarva_controller import SarvaPlan, apply_search_context, build_system_prompt, plan_turn
-from neuralrouter.sarva_brain.loader import sarva_native_plan_hint
-from neuralrouter.sarva_brain.refine import refine
 from neuralrouter.project_context import enrich_message_with_project
 from neuralrouter.router import REGISTRY, confidence_for
+from neuralrouter.sarva_brain.context_budget import budget_context
+from neuralrouter.sarva_brain.loader import sarva_native_plan_trace
+from neuralrouter.sarva_brain.refine import refine
+from neuralrouter.sarva_controller import (
+    SarvaPlan,
+    apply_search_context,
+    build_system_prompt,
+    plan_turn,
+)
 from neuralrouter.search.web_search import aksh_search
-from neuralrouter.work_modes import WorkMode, scope_confirmation, build_scope
+from neuralrouter.work_modes import WorkMode, build_scope, scope_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +81,12 @@ async def _run_with_plan(plan: SarvaPlan) -> ChatResult:
     start = time.time()
     sub_behaviors: list[dict] = []
     experts = plan.experts
+    if not experts:
+        from neuralrouter.router import manual_expert
+
+        experts = [manual_expert("qwen")]
     primary = experts[0]
-    conf = confidence_for(primary)
+    conf = max(confidence_for(primary), plan.confidence)
 
     total_tokens = prompt_tokens = completion_tokens = None
     system_prompt = build_system_prompt(plan)
@@ -112,7 +122,8 @@ async def _run_with_plan(plan: SarvaPlan) -> ChatResult:
             total_tokens = result.get("tokens")
         else:
             synthesis_prompt = (
-                "Combine these expert answers into one clear, non-redundant response:\n\n"
+                "Combine these expert answers into one clear, non-redundant response. "
+                "Do not invent facts that none of the experts stated.\n\n"
                 + "\n\n---\n\n".join(parts)
             )
             synthesis = await call_model(synthesis_prompt, "qwen", system_prompt=system_prompt)
@@ -123,8 +134,11 @@ async def _run_with_plan(plan: SarvaPlan) -> ChatResult:
     elapsed = round(time.time() - start, 2)
     internal_experts = [e.model_id for e in experts]
 
-    # Refinement layer (paper v4 §3.4): verify the answer as a draft before returning.
+    # Refinement layer (paper §4.3): verify the answer as a draft before returning.
     verification = refine(final_answer, plan.output_style, plan.query)
+    if verification["issues"]:
+        # Honest flag — do not silently rewrite; surface issues in plan metadata.
+        logger.info("Sarva refine issues: %s", verification["issues"])
 
     return ChatResult(
         answer=final_answer,
@@ -148,6 +162,12 @@ async def _run_with_plan(plan: SarvaPlan) -> ChatResult:
             "brain_type": plan.brain_type,
             "confidence": plan.confidence,
             "self_handled": plan.self_handled,
+            "task_type": plan.task_type,
+            "complexity": plan.complexity,
+            "routing_mode": plan.routing_mode,
+            "routing_policy": plan.routing_policy,
+            "capability_bound": plan.capability_bound,
+            "primary_model": plan.primary_model,
         },
         web_search_used=bool(plan.search_context),
         verified=verification["verified"],
@@ -174,40 +194,40 @@ async def run_chat(
         include_index=True,
     )
 
-    if history:
-        lines = []
-        for h in history[-20:]:
-            role = h.get("role", "user").upper()
-            lines.append(f"{role}: {h.get('content', '')}")
-        if lines:
-            enriched = "Previous conversation:\n" + "\n".join(lines) + "\n\n" + enriched
-
+    # Paper §11 — budget history / workspace / rules instead of unbounded concat.
+    workspace_bits: list[str] = []
     if file_context:
-        enriched = f"@file context:\n{file_context.strip()}\n\n{enriched}"
+        workspace_bits.append(f"@file context:\n{file_context.strip()}")
     elif effective_rules and not project_id:
-        enriched = f"Project rules (.akshrules):\n{effective_rules.strip()}\n\n{enriched}"
+        workspace_bits.append(f"Project rules (.akshrules):\n{effective_rules.strip()}")
 
-    plan = plan_turn(enriched, force_model=force_model, search_mode=search_mode, work_mode=work_mode)
+    # If enrich already folded project context into enriched, treat the delta as codebase.
+    codebase = ""
+    user_core = message
+    if enriched != message and user_id and project_id:
+        # enriched = summary + index + rules + user message — keep as codebase+workspace budget
+        codebase = enriched.rsplit("User message:", 1)[0].strip()
+        user_core = message
 
-    hint = await sarva_native_plan_hint(enriched)
-    if hint:
-        plan = SarvaPlan(
-            query=plan.query,
-            experts=plan.experts,
-            use_web_search=plan.use_web_search,
-            search_mode=plan.search_mode,
-            output_style=plan.output_style,
-            collaborative=plan.collaborative,
-            work_mode=plan.work_mode,
-            scope_summary=plan.scope_summary,
-            system_directives=plan.system_directives + [hint],
-            search_context=plan.search_context,
-            reasoning=plan.reasoning + "; sarva_inference_hint=on",
-            brain_version_id=plan.brain_version_id,
-            brain_type=plan.brain_type,
-            confidence=plan.confidence,
-            self_handled=plan.self_handled,
-        )
+    budgeted = budget_context(
+        user_message=user_core,
+        skills="",  # Hermes skill injection hook (filled when skill store is wired)
+        codebase=codebase,
+        history=history,
+        workspace="\n\n".join(workspace_bits),
+    )
+    plan_query = budgeted.as_prompt_block()
+    if budgeted.truncated:
+        logger.info("Context budget truncated: %s est=%s", budgeted.truncated, budgeted.token_estimate)
+
+    trained = await sarva_native_plan_trace(plan_query)
+    plan = plan_turn(
+        plan_query,
+        force_model=force_model,
+        search_mode=search_mode,
+        work_mode=work_mode,
+        trained_trace=trained,
+    )
 
     if plan.use_web_search:
         try:
@@ -218,8 +238,7 @@ async def run_chat(
 
     result = await _run_with_plan(plan)
 
-    # RLEF: log a RoutingRecord for every turn (paper §5.2.3 / §7.5.1). Best-effort —
-    # never let reward logging affect the user's response.
+    # RLEF: log a RoutingRecord for every turn. Best-effort.
     try:
         alignments = [
             b.get("registry_style_alignment", 0.0)
@@ -229,7 +248,7 @@ async def run_chat(
         quality_alignment = sum(alignments) / len(alignments) if alignments else 0.5
         build_and_log(
             query=message,
-            task_type=f"{plan.work_mode}:{plan.output_style}",
+            task_type=f"{plan.work_mode}:{plan.output_style}:{plan.task_type}",
             models=result.all_experts_used,
             collaborative=result.collaborative,
             answer=result.answer,
@@ -238,8 +257,6 @@ async def run_chat(
             tokens=result.tokens,
             brain_version_id=plan.brain_version_id,
             user_id=user_id,
-            # Refinement verification as a real R_exec signal — trust it as a
-            # negative only when the refiner actually found issues.
             exec_success=(False if result.verified is False else None),
         )
     except Exception:

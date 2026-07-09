@@ -1,0 +1,165 @@
+"""Permission gate — security.check(plan) before Harness ACT (paper §3.2 / §6).
+
+Every tool invocation crosses this gate. There is no privileged path from a
+model decision to a real-world effect. MVP rules:
+
+  - read-class tools: auto-approve
+  - write / browser-mutate / system: require work-mode allow_write (or explicit confirm)
+  - destructive shell patterns: always deny
+  - deploy tools: require allow_deploy
+
+Returns an Approval with reason for audit / RLEF.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+# Tools that only observe — auto-approve.
+READ_TOOLS = frozenset(
+    {
+        "read_file",
+        "grep",
+        "list_files",
+        "security_scan",
+        "git_status",
+        "git_diff",
+        "browser_extract",
+        "browser_screenshot",
+        "browser_wait",
+        "screenshot_region",
+    }
+)
+
+# Tools that mutate state / external world.
+WRITE_TOOLS = frozenset(
+    {
+        "write_file",
+        "generate_deploy_kit",
+        "run_terminal",
+        "git_commit",
+        "browser_open",
+        "browser_navigate",
+        "browser_click",
+        "browser_type",
+        "browser_execute",
+        "open_app",
+        "manage_clipboard",
+        "notify",
+    }
+)
+
+DEPLOY_TOOLS = frozenset({"generate_deploy_kit"})
+
+# Shell patterns that must never auto-run (paper §6 excessive agency).
+_DESTRUCTIVE_SHELL = re.compile(
+    r"("
+    r"\brm\s+-rf\b|\bdel\s+/[sS]\b|\bformat\s+"
+    r"|\bmkfs\b|\bdd\s+if="
+    r"|\bshutdown\b|\breboot\b"
+    r"|\bcurl\b.*\|\s*(ba)?sh"
+    r"|\bwget\b.*\|\s*(ba)?sh"
+    r"|\bDrop-Database\b|\bRemove-Item\s+-Recurse\s+-Force\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+@dataclass
+class Approval:
+    approved: bool
+    reason: str
+    tool: str = ""
+    risk: str = "low"  # low | medium | high | blocked
+    audit: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "approved": self.approved,
+            "reason": self.reason,
+            "tool": self.tool,
+            "risk": self.risk,
+            "audit": self.audit,
+        }
+
+
+def check_plan(
+    tool: str,
+    args: dict[str, Any] | None = None,
+    *,
+    allow_write: bool = True,
+    allow_deploy: bool = False,
+    work_mode: str = "ship",
+) -> Approval:
+    """Gate one Harness tool call. Call before run_tool()."""
+    args = args or {}
+    audit = {"tool": tool, "work_mode": work_mode, "allow_write": allow_write}
+
+    if tool not in READ_TOOLS and tool not in WRITE_TOOLS:
+        return Approval(
+            approved=False,
+            reason=f"unknown_tool:{tool}",
+            tool=tool,
+            risk="blocked",
+            audit=audit,
+        )
+
+    if tool in READ_TOOLS:
+        return Approval(
+            approved=True,
+            reason="read_auto_approve",
+            tool=tool,
+            risk="low",
+            audit=audit,
+        )
+
+    if tool in DEPLOY_TOOLS and not allow_deploy:
+        return Approval(
+            approved=False,
+            reason="deploy_blocked_by_work_mode",
+            tool=tool,
+            risk="high",
+            audit=audit,
+        )
+
+    if not allow_write:
+        return Approval(
+            approved=False,
+            reason="write_blocked_read_only_mode",
+            tool=tool,
+            risk="medium",
+            audit=audit,
+        )
+
+    if tool == "run_terminal":
+        cmd = str(args.get("command") or args.get("cmd") or "")
+        if _DESTRUCTIVE_SHELL.search(cmd):
+            return Approval(
+                approved=False,
+                reason="destructive_shell_blocked",
+                tool=tool,
+                risk="blocked",
+                audit={**audit, "command_preview": cmd[:200]},
+            )
+        return Approval(
+            approved=True,
+            reason="shell_allowed_non_destructive",
+            tool=tool,
+            risk="medium",
+            audit={**audit, "command_preview": cmd[:200]},
+        )
+
+    risk = "high" if tool in ("browser_execute", "open_app", "git_commit") else "medium"
+    return Approval(
+        approved=True,
+        reason="write_allowed_by_work_mode",
+        tool=tool,
+        risk=risk,
+        audit=audit,
+    )
+
+
+# Alias matching paper loop name: await security.check(plan)
+check = check_plan

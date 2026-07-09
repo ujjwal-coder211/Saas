@@ -1,0 +1,13 @@
+{
+  "source": "C:\\Users\\ujjwa\\Saas\\omni_training\\data\\seed\\omni_combined_train.jsonl",
+  "output": "C:\\Users\\ujjwa\\Saas\\omni_training\\data\\export\\conductor_bootstrap_train.jsonl",
+  "stats": {
+    "total": 500,
+    "routing": 462,
+    "synthesis": 38,
+    "cot": 0,
+    "invalid": 0,
+    "errors": []
+  },
+  "ready_for_colab": true
+}

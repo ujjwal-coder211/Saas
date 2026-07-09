@@ -1,7 +1,8 @@
 """
-Routely Router — task planner.
+Routely Router — Sarva task planner (paper §3–4).
 
-Decides: work mode scope, web search, best free model routing, output strategy.
+Hybrid policy: keyword rules + confidence reasoning + capability bounds.
+Self-handle routes to a cheap model only — never claims Sarva can answer everything.
 """
 
 from __future__ import annotations
@@ -10,10 +11,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-from neuralrouter.router import ExpertMatch, activate_experts, manual_expert
-from neuralrouter.search.web_search import SearchResult, needs_web_search
-from neuralrouter.sarva_brain.confidence import self_assess, threshold_for
+from neuralrouter.router import ExpertMatch
 from neuralrouter.sarva_brain.loader import active_brain_summary, brain_directives_for_plan
+from neuralrouter.sarva_brain.routing_policy import (
+    CAPABILITY_BOUND,
+    RoutingDecisionTrace,
+    decide_routing,
+)
+from neuralrouter.search.web_search import SearchResult, needs_web_search
 from neuralrouter.work_modes import WorkMode, build_scope, routing_query_boost
 
 SearchMode = Literal["auto", "on", "off"]
@@ -39,6 +44,11 @@ class SarvaPlan:
     brain_type: str = "rules"
     confidence: float = 0.6
     self_handled: bool = False
+    task_type: str = "general"
+    complexity: str = "medium"
+    routing_mode: str = "single_delegate"
+    routing_policy: str = "hybrid_rules_reasoning"
+    capability_bound: str = CAPABILITY_BOUND
 
     @property
     def primary_model(self) -> str:
@@ -56,74 +66,42 @@ def _detect_output_style(query: str) -> OutputStyle:
     return "prose"
 
 
-def plan_turn(
-    query: str,
+def _apply_trace(
     *,
-    force_model: str | None = None,
-    search_mode: SearchMode = "auto",
-    work_mode: WorkMode = "auto",
-    max_experts: int = 3,
+    query: str,
+    trace: RoutingDecisionTrace,
+    scope,
+    style: OutputStyle,
+    search_mode: SearchMode,
+    brain_id: str,
+    brain_type: str,
+    directives: list[str],
 ) -> SarvaPlan:
-    """
-    Sarva Controller entry — call before run_chat.
-    Returns routing + search + style + scope decisions.
-    """
-    scope = build_scope(work_mode, query)
-    directives: list[str] = [
-        "You are Routely by Aitotech. The user sees only Routely — never name internal model names.",
-        "If web search context is provided, prefer it for time-sensitive facts.",
-    ]
-    directives.extend(scope.system_directives)
-    brain_meta = active_brain_summary()
-    directives.extend(brain_directives_for_plan())
-    brain_id = brain_meta.get("version_id", "sarva-rules-v0")
-    brain_type = brain_meta.get("type", "rules")
-
-    routing_query = routing_query_boost(query, scope)
-
-    if force_model:
-        experts = [manual_expert(force_model)]
-        reasoning = f"forced_model={force_model}"
-        collaborative = False
-    else:
-        experts = activate_experts(routing_query)
-        reasoning = f"router picked {len(experts)} expert(s) for mode={scope.mode}"
-        collaborative = scope.collaborative and len(experts) > 1
-
-    if collaborative:
-        experts = experts[:max_experts]
-        directives.append("Synthesize expert perspectives into one clear Sarva answer.")
-    else:
-        experts = experts[:1] if experts else experts
-
-    style = _detect_output_style(query)
-    if style == "hinglish":
-        directives.append("Respond naturally in Hinglish unless user asks English only.")
-    elif style == "code":
-        directives.append("Prefer working code blocks with brief explanation.")
-
-    # Confidence-based self-routing (paper v4 §3.3). Heuristic self-assessment:
-    # high confidence + low stakes → Sarva can self-handle; else delegate to a teacher.
-    assess_type = "code" if style == "code" else "general"
-    confidence = self_assess(query, assess_type)
-    bar = threshold_for(assess_type)
-    self_handled = confidence >= bar and not force_model
-    reasoning += f"; confidence={confidence:.2f}/{bar:.2f} self_handled={self_handled}"
+    collaborative = (
+        trace.routing_mode == "multi_synthesize" and len(trace.experts) > 1
+    )
 
     effective_search = search_mode
     if scope.mode == "explain" and search_mode == "auto":
         effective_search = "off"
 
     use_search = needs_web_search(query, effective_search) and scope.allow_search
+    if trace.needs_grounding and search_mode != "off" and scope.allow_search:
+        use_search = True
+
+    if use_search:
+        directives.append("Ground answers in search results when relevant — do not invent facts.")
+
+    reasoning = (
+        f"brain={brain_id}; mode={scope.mode}; policy={trace.policy}; "
+        + trace.reasoning_text()
+    )
     if use_search:
         reasoning += "; web_search=on"
-        directives.append("Ground answers in Aksh Search results when relevant.")
-
-    reasoning = f"brain={brain_id}; mode={scope.mode}; " + reasoning
 
     return SarvaPlan(
         query=query,
-        experts=experts,
+        experts=trace.experts,
         use_web_search=use_search,
         search_mode=effective_search,
         output_style=style,
@@ -134,8 +112,89 @@ def plan_turn(
         reasoning=reasoning,
         brain_version_id=brain_id,
         brain_type=brain_type,
-        confidence=confidence,
-        self_handled=self_handled,
+        confidence=trace.confidence,
+        self_handled=trace.self_executable,
+        task_type=trace.task_type,
+        complexity=trace.complexity,
+        routing_mode=trace.routing_mode,
+        routing_policy=trace.policy,
+        capability_bound=trace.capability_bound,
+    )
+
+
+def plan_turn(
+    query: str,
+    *,
+    force_model: str | None = None,
+    search_mode: SearchMode = "auto",
+    work_mode: WorkMode = "auto",
+    max_experts: int = 3,
+    historical_success: float | None = None,
+    trained_trace: RoutingDecisionTrace | None = None,
+) -> SarvaPlan:
+    """
+    Sarva Controller entry — hybrid rules + reasoning before run_chat.
+    """
+    scope = build_scope(work_mode, query)
+    directives: list[str] = [
+        "You are Routely by Aitotech. The user sees only Routely — never name internal model names.",
+        "If web search context is provided, prefer it for time-sensitive facts.",
+        CAPABILITY_BOUND,
+    ]
+    directives.extend(scope.system_directives)
+    brain_meta = active_brain_summary()
+    directives.extend(brain_directives_for_plan())
+    brain_id = brain_meta.get("version_id", "sarva-rules-v0")
+    brain_type = brain_meta.get("type", "rules")
+
+    # Boost is ONLY for keyword expert matching — never for confidence/classify.
+    expert_query = routing_query_boost(query, scope)
+    style = _detect_output_style(query)
+    if style == "hinglish":
+        directives.append("Respond naturally in Hinglish unless user asks English only.")
+    elif style == "code":
+        directives.append("Prefer working code blocks with brief explanation.")
+
+    # Blend RLEF empirical prior into confidence when caller did not pass one.
+    if historical_success is None:
+        try:
+            from sarva_training.rlef import historical_self_success
+
+            historical_success = historical_self_success()
+        except Exception:
+            historical_success = None
+
+    if trained_trace is not None and not force_model:
+        trace = trained_trace
+        directives.append("Routing decision came from trained Sarva plan JSON (with capability bounds).")
+    else:
+        trace = decide_routing(
+            query,
+            output_style=style,
+            force_model=force_model,
+            collaborative_allowed=scope.collaborative,
+            max_experts=max_experts,
+            historical_success=historical_success,
+            expert_query=expert_query,
+        )
+
+    if trace.self_executable:
+        directives.append(
+            "Self-handle path: answer carefully via the assigned inexpensive model. "
+            "If unsure, say so — do not hallucinate."
+        )
+    elif trace.routing_mode == "multi_synthesize":
+        directives.append("Synthesize expert perspectives into one clear Sarva answer.")
+
+    return _apply_trace(
+        query=query,
+        trace=trace,
+        scope=scope,
+        style=style,
+        search_mode=search_mode,
+        brain_id=brain_id,
+        brain_type=brain_type,
+        directives=directives,
     )
 
 
@@ -157,6 +216,11 @@ def apply_search_context(plan: SarvaPlan, result: SearchResult) -> SarvaPlan:
         brain_type=plan.brain_type,
         confidence=plan.confidence,
         self_handled=plan.self_handled,
+        task_type=plan.task_type,
+        complexity=plan.complexity,
+        routing_mode=plan.routing_mode,
+        routing_policy=plan.routing_policy,
+        capability_bound=plan.capability_bound,
     )
 
 

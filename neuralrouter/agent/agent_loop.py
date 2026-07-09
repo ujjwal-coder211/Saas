@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from neuralrouter.agent.tools import ALLOWED_TOOLS, run_tool
+from neuralrouter.security.permissions import check_plan
 from neuralrouter.work_modes import WorkScope, build_scope, scope_confirmation
 
 MAX_STEPS = 8
@@ -114,8 +115,20 @@ async def run_agent_loop(
         if not call:
             break
         tool_name = call["tool"]
-        if tool_name == "generate_deploy_kit" and not scope.allow_deploy:
-            result = {"ok": False, "error": "Deploy tools blocked in this work mode"}
+        # Paper §3.2 / §6 — every Harness action crosses security.check(plan).
+        approval = check_plan(
+            tool_name,
+            call["args"],
+            allow_write=scope.allow_write,
+            allow_deploy=scope.allow_deploy,
+            work_mode=scope.mode,
+        )
+        if not approval.approved:
+            result = {
+                "ok": False,
+                "error": f"security_gate_denied: {approval.reason}",
+                "approval": approval.to_dict(),
+            }
         else:
             result = run_tool(
                 tool_name,
@@ -123,6 +136,8 @@ async def run_agent_loop(
                 project_root=project_root,
                 allow_write=scope.allow_write,
             )
+            if isinstance(result, dict):
+                result = {**result, "approval": approval.to_dict()}
         tools_used.append(tool_name)
         steps.append(
             AgentStep(

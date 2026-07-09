@@ -9,7 +9,7 @@ Required env:
 
 Optional env (sensible defaults):
   BASE_MODEL       default: nvidia/Nemotron-3-Nano-30B-A3B
-  DATA_PATH        default: sarva_training/data/export/conductor_v1_train.jsonl
+  DATA_PATH        default: sarva_master_train.jsonl if present, else conductor_v1_train.jsonl
   ADAPTER_REPO     default: Ujjwal211/aitotech-sarva-v2
   RESUME_ADAPTER   default: (none) — set to continue from an existing adapter repo
   EPOCHS           default: 3
@@ -42,7 +42,10 @@ def main() -> int:
         return 2
 
     base_model = _env("BASE_MODEL", "nvidia/Nemotron-3-Nano-30B-A3B")
-    data_path = _env("DATA_PATH", "sarva_training/data/export/conductor_v1_train.jsonl")
+    _master = "sarva_training/data/export/sarva_master_train.jsonl"
+    _v1 = "sarva_training/data/export/conductor_v1_train.jsonl"
+    _default_data = _master if os.path.exists(_master) else _v1
+    data_path = _env("DATA_PATH", _default_data)
     adapter_repo = _env("ADAPTER_REPO", "Ujjwal211/aitotech-sarva-v2")
     resume_adapter = os.environ.get("RESUME_ADAPTER", "").strip()
     epochs = float(_env("EPOCHS", "3"))

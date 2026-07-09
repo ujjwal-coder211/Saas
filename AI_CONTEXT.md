@@ -20,31 +20,34 @@ jiska dimaag **Sarva** conductor model hai. Sarva har task ke liye best free LLM
     confidence-gated self-routing + refinement + multi-source distillation.
   - v6 poora **honest academic report** ban gaya — "designed vs implemented vs validated" clearly alag.
     Saaf likha: **abhi koi trained model nahi**, saare targets sirf hypotheses.
-  - Naye sections: **§2 Related Work, §8.3 Objective Stability (alignment/drift), §13 Implementation Status
-    (= hamara prototype + harvest, 29 tests).** Security (§6) designed hai par **implemented nahi** (permission gate abhi stub).
+  - Naye sections: **§2 Related Work, §8.3 Objective Stability, §13 Implementation Status
+    (= harvest prototype).** Security (§6) MVP gate ab `permissions.py` mein hai; full vault later.
   - **GLM base model NAHI** — open-weight *delegate teacher* (GLM/DeepSeek/Kimi/Qwen). Base = Nemotron-Nano-30B.
 
 ---
 
 ## 2. Paper vs Repo — abhi kahaan khade hain (gap analysis)
 
-| Paper layer (v4) | Status | Kahaan hai code |
+| Paper layer (v6) | Status | Kahaan hai code |
 |---|---|---|
-| **Sarva — Cognition (Conductor+Executor+Learner)** | 🟡 Rules routing + **ab confidence self-assess (§3.3) + refine (§3.4) bhi** (port ho gaya). Trained 30B model abhi wire nahi. | `neuralrouter/sarva_controller.py`, `sarva_brain/confidence.py` + `refine.py` (NEW), `sarva_brain/loader.py`, `sarva_training/` |
-| **Harness — Execution** | 🟢 File/shell/git + browser + system tools. | `neuralrouter/agent/tools.py`, `neuralrouter/parity/` |
-| **Hermes — Memory** | 🟡 Threads + skills storage; RLEF reward logging. | `saas/api/threads.py`, `saas/api/skills.py`, `sarva_training/skill_ingest.py` |
-| **RLEF self-evolution (§7)** | 🟢 Loop close (logging + collect_cycle); ab R_exec ko refine verification feed karta hai. | `sarva_training/rlef.py` |
-| **Security & Trust (§5) [v4 NEW]** | 🔴 Permission gate / vault / injection firewall abhi nahi. | — |
-| **Failure Modes (§12) [v4 NEW]** | 🔴 Catalog + mitigations abhi nahi. | — |
-| **Enterprise/B2B (§13) [v4 NEW]** | 🟡 Tier-gated routing hai; on-prem/RBAC/audit nahi. | `saas/billing/plans.py` |
-| **Voice (§8)** | 🔴 Abhi tak nahi bana. | — |
+| **Sarva — Cognition (Conductor+Executor+Learner)** | 🟢 Hybrid **rules + reasoning** routing policy; confidence self-assess; capability bound (no overclaim); refine. Trained 30B still not promoted. | `sarva_controller.py`, `sarva_brain/routing_policy.py`, `confidence.py`, `refine.py`, `loader.py` |
+| **Harness — Execution** | 🟢 File/shell/git + browser + system tools (**22**). | `agent/tools.py`, `parity/` |
+| **Hermes — Memory** | 🟡 Threads + skills; RLEF logging; context budget (§11). | `saas/api/threads.py`, `rlef.py`, `sarva_brain/context_budget.py` |
+| **RLEF self-evolution (§8)** | 🟢 Loop close (logging + collect_cycle). | `sarva_training/rlef.py` |
+| **Security & Trust (§6)** | 🟢 MVP permission gate in agent loop (`check_plan`). Vault / injection firewall later. | `security/permissions.py` |
+| **Context budgeting (§11)** | 🟢 Skills/code/history/workspace soft caps. | `sarva_brain/context_budget.py` |
+| **Failure Modes (§12)** | 🔴 Catalog + mitigations abhi nahi. | — |
+| **Enterprise/B2B (§16)** | 🟡 Tier-gated routing; on-prem/RBAC later. | `saas/billing/plans.py` |
+| **Voice (§9)** | 🔴 Abhi tak nahi. | — |
+| **Trained Sarva 30B** | 🔴 Train + promote pending (out of this pass). | RunPod kit ready |
 
-**Honest verdict:** Body (Harness + SaaS + tier gating) aur training rig (dataset pipeline + Colab notebook +
-brain hot-swap registry) ban chuke hain. Asli missing cheez = **trained brain khud** + voice + (ab tak)
-browser/RLEF — jinme se browser aur RLEF is session mein ban gaye.
-
-`sarva_training/brain_registry.json` confirm karta hai: `active_version_id` abhi bhi `sarva-rules-v0` hai;
-`sarva-v1` ek `candidate` hai jiska `eval_score: null`.
+**Honest verdict (2026-07-09):** Paper loop minus **GPU train** is end-to-end ready:
+hybrid routing, security gate, context budget, refine, RLEF (+ historical prior),
+22 tools, harvest, **inference serve** (`deploy/runpod/serve_sarva.py`),
+**plug script** (`scripts/plug_sarva_after_train.py`). After RunPod push HF adapter:
+serve `/plan` → set `SARVA_INFERENCE_URL` → `--promote --approve`. Active brain still
+`sarva-rules-v0` until you promote. Dataset: `sarva_master_train.jsonl` (972) + v1 (2154).
+`sarva-v2` candidate slot pre-registered for `Ujjwal211/aitotech-sarva-v2`.
 
 ---
 
