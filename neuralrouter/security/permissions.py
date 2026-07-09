@@ -93,20 +93,24 @@ def check_plan(
     allow_deploy: bool = False,
     work_mode: str = "ship",
     from_untrusted: bool = False,
+    context: str = "default",
 ) -> Approval:
     """Gate one Harness tool call. Call before run_tool().
 
     ``from_untrusted``: set when this action's proximate cause is untrusted
     (fetched/tool) content — the risk tier is escalated and, if that reaches
     ``blocked``, the action is denied (paper §6.3 structural escalation).
+    ``context``: a stable key (e.g. project id / task type) for adaptive
+    trust-promotion (§6.2).
     """
     approval = _evaluate(
         tool, args, allow_write=allow_write, allow_deploy=allow_deploy, work_mode=work_mode
     )
-    return _finalize(approval, from_untrusted=from_untrusted)
+    return _finalize(approval, from_untrusted=from_untrusted, context=context)
 
 
-def _finalize(approval: Approval, *, from_untrusted: bool) -> Approval:
+def _finalize(approval: Approval, *, from_untrusted: bool, context: str = "default") -> Approval:
+    from neuralrouter.security import adaptive as _adaptive
     from neuralrouter.security import audit as _audit
     from neuralrouter.security.injection import escalate_risk
 
@@ -116,6 +120,17 @@ def _finalize(approval: Approval, *, from_untrusted: bool) -> Approval:
         if approval.risk == "blocked":
             approval.approved = False
             approval.reason = "escalated_untrusted_content_blocked"
+
+    # Adaptive trust (§6.2): record write-class decisions and expose promotion.
+    if approval.tool and approval.risk in ("medium", "high"):
+        _adaptive.record_approval(
+            approval.tool, context=context, approved=approval.approved, risk=approval.risk
+        )
+    approval.audit = {
+        **approval.audit,
+        "promoted": _adaptive.is_promoted(approval.tool, context=context) if approval.tool else False,
+    }
+
     _audit.record(
         "permission",
         tool=approval.tool,
