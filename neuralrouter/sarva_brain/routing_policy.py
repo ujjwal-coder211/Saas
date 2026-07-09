@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-from neuralrouter.router import ExpertMatch, activate_experts, manual_expert
+from neuralrouter.router import REGISTRY, ExpertMatch, activate_experts, manual_expert
 from neuralrouter.sarva_brain.confidence import (
     HIGH_STAKES_TASK_TYPES,
     self_assess,
@@ -31,6 +31,34 @@ RoutingMode = Literal["self_cheap", "single_delegate", "multi_synthesize"]
 
 # Paper §13: self-execution → designated inexpensive model (not a local Sarva yet).
 CHEAP_SELF_MODEL = "qwen"
+
+# Paper names teachers (DeepSeek, Llama, GPT, Claude...) that are not distinct
+# entries in the local model registry. Map such names to the closest registry
+# model so a trained Sarva plan that emits them still routes instead of being
+# silently discarded (manual_expert would otherwise raise on an unknown id).
+_MODEL_ALIASES = {
+    "deepseek": "nemotron",
+    "deepseek-r1": "nemotron",
+    "deepseek-chat": "nemotron",
+    "llama": "qwen",
+    "llama-3": "qwen",
+    "gpt-4o": "qwen",
+    "gpt4o": "qwen",
+    "claude": "kimi",
+    "gemma": "glm",
+}
+
+
+def _resolve_model(model_id: str, fallback: str = CHEAP_SELF_MODEL) -> str:
+    """Map any requested model id to a known registry id (never raises)."""
+    if not model_id:
+        return fallback
+    if model_id in REGISTRY:
+        return model_id
+    alias = _MODEL_ALIASES.get(model_id.lower())
+    if alias and alias in REGISTRY:
+        return alias
+    return fallback
 
 # Capability bound — what Sarva may claim vs must refuse to overclaim.
 CAPABILITY_BOUND = (
@@ -233,7 +261,8 @@ def decide_routing(
         prefer_reason = _prefer_reasoning_model(task_type, complexity, query)
         # Prefer deepseek/glm for reasoning-heavy; else top keyword match.
         if prefer_reason:
-            preferred_order = ["deepseek", "glm", "qwen", "llama", "mistral", "kimi"]
+            # Registry-real ids, ordered for reasoning strength (nemotron/glm lead).
+            preferred_order = ["nemotron", "glm", "kimi", "qwen", "mistral"]
             steps.append("reasoning: prefer reasoning-capable teacher for this task")
         else:
             preferred_order = [e.model_id for e in rule_experts] + [
@@ -324,6 +353,16 @@ def parse_trained_plan_json(payload: dict) -> RoutingDecisionTrace | None:
     if self_exec and (task_type in HIGH_STAKES_TASK_TYPES or complexity == "high"):
         if confidence < 0.9:
             self_exec = False
+
+    # Resolve trained-model names to registry ids so an out-of-registry name
+    # (e.g. the paper's "deepseek") routes instead of raising and being dropped.
+    primary = _resolve_model(primary)
+    resolved_secondaries: list[str] = []
+    for m in secondaries:
+        rid = _resolve_model(str(m))
+        if rid != primary and rid not in resolved_secondaries:
+            resolved_secondaries.append(rid)
+    secondaries = resolved_secondaries
 
     if self_exec:
         primary = CHEAP_SELF_MODEL
