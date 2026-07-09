@@ -212,6 +212,12 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
   setup.sh ko `--break-system-packages` chahiye (fixed). (2) Paper ka `nvidia/Nemotron-3-Nano-30B-A3B`
   ek `nemotron_h` hybrid Mamba+MoE hai jise **Unsloth support nahi karta** — QLoRA ke liye default base
   ab `unsloth/Qwen2.5-14B-Instruct-bnb-4bit` (train_sarva.py). Nemotron-30B baad mein non-Unsloth pipeline se.
+  (3) bf16 GPU pe `fp16=True` fail — auto-detect fix. (4) serve_sarva starlette 1.3.1 skew → raw JSON body.
+- **2026-07-09 🏆 MILESTONE** — **Sarva ka pehla trained brain ban gaya!** Qwen2.5-14B QLoRA, 3 epochs,
+  972 rows, loss ~0.33→0.07. Adapter HF pe: **`Ujjwal211/aitotech-sarva-v2`**. Live-tested — correct
+  confidence-gated routing (simple→self-handle 0.92, complex/security→delegate). Registry `sarva-v2` candidate.
+  Merged-model push transformers 5.5.0 bug se atka (not needed — adapter+base kaafi). Pod stopped, old
+  `aitotech-omni-v1` repo deleted. **Baaki:** serve (on-demand pod) + `SARVA_INFERENCE_URL` set + promote.
 - **2026-07-05** — Paper **v4 → v6** ("v5.0"). Conductor ka naam **Sarva → Sarva** (paper mein; code abhi "Sarva").
   Naye: §2 Related Work, §8.3 Objective Stability, §13 Implementation Status (prototype + harvest, 29 tests).
   Honest reframe: koi trained model nahi, sab hypotheses. **Pending decision:** code mein Sarva→Sarva rename karna ya nahi.

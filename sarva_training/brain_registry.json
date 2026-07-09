@@ -7,38 +7,19 @@
       "label": "Sarva Hybrid (rules + reasoning)",
       "type": "rules",
       "status": "active",
-      "description": "Hybrid keyword rules + confidence reasoning + capability bounds. Active until trained LoRA is promoted after RunPod.",
+      "description": "Hybrid keyword rules + confidence reasoning + capability bounds. Active until trained LoRA is served + promoted.",
       "artifact": null,
       "metrics": {},
       "created_at": "2026-06-20T00:00:00+00:00"
     },
-    "sarva-v1": {
-      "id": "sarva-v1",
-      "label": "Sarva v1 LoRA",
-      "type": "lora_hf",
-      "status": "candidate",
-      "description": "First trained Sarva adapter slot — Nemotron-Nano-30B. Promote when eval passes.",
-      "artifact": {
-        "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
-        "adapter_repo": "Ujjwal211/aitotech-sarva-v1",
-        "adapter_path": null,
-        "train_platform": "runpod"
-      },
-      "metrics": {
-        "eval_score": null,
-        "manual_approved": false
-      },
-      "trained_at": null,
-      "created_at": "2026-06-20T00:00:00+00:00"
-    },
     "sarva-v2": {
       "id": "sarva-v2",
-      "label": "Sarva Conductor v2",
+      "label": "Sarva Conductor v2 (Qwen2.5-14B QLoRA)",
       "type": "lora_hf",
       "status": "candidate",
-      "description": "Target slot for next RunPod QLoRA train (master train JSONL). After HF push: scripts/plug_sarva_after_train.py --promote --approve. Serve with deploy/runpod/serve_sarva.py and set SARVA_INFERENCE_URL.",
+      "description": "TRAINED + pushed to HF (2026-07-09, RunPod A40, 3 epochs on sarva_master_train). Live-tested: correct confidence-gated routing. To activate: serve deploy/runpod/serve_sarva.py, set SARVA_INFERENCE_URL, then scripts/plug_sarva_after_train.py --promote --approve. NOTE: base is Qwen2.5-14B (paper's Nemotron-30B is nemotron_h hybrid, not Unsloth-trainable).",
       "artifact": {
-        "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
+        "base_model": "unsloth/Qwen2.5-14B-Instruct-bnb-4bit",
         "adapter_repo": "Ujjwal211/aitotech-sarva-v2",
         "adapter_path": null,
         "train_platform": "runpod",
@@ -48,7 +29,7 @@
         "eval_score": null,
         "manual_approved": false
       },
-      "trained_at": null,
+      "trained_at": "2026-07-09T00:00:00+00:00",
       "created_at": "2026-07-09T00:00:00+00:00"
     }
   }
