@@ -75,7 +75,7 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 
 ## §11 Context & Token Economy — ✅ `sarva_brain/context_budget.py` (budgeted skills/file/history/workspace)
 
-## §12 Failure Modes — 🟡 several mitigations exist (circuit breaker, routing floor, RLEF); full catalog not codified
+## §12 Failure Modes — ✅ `sarva_brain/guards.py` (RunGuard: loop detection, budget ceiling, step limit, kill switch, routing floor) wired into `agent_loop`; plus harvest circuit breaker
 
 ## §13 Reference Prototype — ✅ this repo (routing substrate + trained conductor). This file is the alignment record.
 

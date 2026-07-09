@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from neuralrouter.agent.tools import ALLOWED_TOOLS, run_tool
+from neuralrouter.sarva_brain.guards import RunGuard
 from neuralrouter.security.permissions import check_plan
 from neuralrouter.work_modes import WorkScope, build_scope, scope_confirmation
 
@@ -104,6 +105,7 @@ async def run_agent_loop(
     scope = build_scope(work_mode, task)  # type: ignore[arg-type]
     steps: list[AgentStep] = []
     tools_used: list[str] = []
+    guard = RunGuard(max_steps=MAX_STEPS)  # §12: loop / budget / step runaway rail
 
     plan_input = _plan_prompt(task, file_context, rules, scope)
     plan_text = await llm_plan([{"role": "user", "content": plan_input}])
@@ -115,6 +117,11 @@ async def run_agent_loop(
         if not call:
             break
         tool_name = call["tool"]
+        # Paper §12 — loop / budget / step runaway guard before any action.
+        gd = guard.before_action(tool_name, call["args"])
+        if gd.aborted:
+            steps.append(AgentStep(step=i, kind="guard_abort", content=gd.reason))
+            break
         # Paper §3.2 / §6 — every Harness action crosses security.check(plan).
         approval = check_plan(
             tool_name,
@@ -138,6 +145,7 @@ async def run_agent_loop(
             )
             if isinstance(result, dict):
                 result = {**result, "approval": approval.to_dict()}
+        guard.after_action(tool_name, call["args"])
         tools_used.append(tool_name)
         steps.append(
             AgentStep(
