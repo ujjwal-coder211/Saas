@@ -218,6 +218,11 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
   confidence-gated routing (simple→self-handle 0.92, complex/security→delegate). Registry `sarva-v2` candidate.
   Merged-model push transformers 5.5.0 bug se atka (not needed — adapter+base kaafi). Pod stopped, old
   `aitotech-omni-v1` repo deleted. **Baaki:** serve (on-demand pod) + `SARVA_INFERENCE_URL` set + promote.
+- **2026-07-09 — Paper finalization pass.** Naye modules built + tested (46 tests total, all green):
+  §6 security (`security/vault.py` + `injection.py` + `audit.py`, gate mein wired), §7 (`sarva_brain/dag.py`
+  + `synthesis.py`), §12 (`sarva_brain/guards.py`, agent_loop mein wired), §5 (`sarva_training/skill_curator.py`),
+  §9 (`neuralrouter/voice/pipeline.py` scaffold), §14 (`sarva_training/evaluate.py`). Full status: [docs/PAPER_ALIGNMENT.md].
+  Baaki (infra/GPU/weeks): automated PPO retrain (§8), full 500K SFT (§10), real audio (§9), enterprise (§16).
 - **2026-07-05** — Paper **v4 → v6** ("v5.0"). Conductor ka naam **Sarva → Sarva** (paper mein; code abhi "Sarva").
   Naye: §2 Related Work, §8.3 Objective Stability, §13 Implementation Status (prototype + harvest, 29 tests).
   Honest reframe: koi trained model nahi, sab hypotheses. **Pending decision:** code mein Sarva→Sarva rename karna ya nahi.

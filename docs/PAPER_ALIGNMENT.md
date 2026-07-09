@@ -63,7 +63,7 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 | Refinement verification feeds R_exec | ✅ | `chat_service` → `exec_success` |
 | PPO fine-tune loop + promotion gate | 🔴 | collect side done; PPO retrain not automated |
 
-## §9 Voice — 🔴 not started (future work)
+## §9 Voice — 🟡 `neuralrouter/voice/pipeline.py` scaffold: STT/TTS (optional deps, graceful degrade), event-bus shaping, human-in-the-loop correction store (§9.1), high-risk-needs-visual-confirm rule. Real audio needs a backend installed.
 
 ## §10 Training Methodology
 
@@ -79,7 +79,7 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 
 ## §13 Reference Prototype — ✅ this repo (routing substrate + trained conductor). This file is the alignment record.
 
-## §14 Evaluation — 🔴 metrics defined in paper; benchmark harness not built
+## §14 Evaluation — 🟡 `sarva_training/evaluate.py`: computes RA, cost-efficiency, safety-block, recovery, skill-hit vs pre-registered targets. Producing records (running tasks through models) needs GPU/infra.
 
 ## §16 Deployment / Enterprise
 
@@ -97,9 +97,13 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 routing, refinement, Harness (22 tools) with a permission gate, RLEF logging loop,
 context budgeting, tier gating, and a **live trained Sarva conductor** on HF.
 
-**Biggest remaining (future work, per the paper's own framing):** credential vault +
-injection firewall (§6), DAG decomposition (§7), automated PPO retrain (§8), voice
-(§9), full training stages (§10), and the evaluation harness (§14).
+**Now also built:** credential vault + injection firewall + audit (§6), DAG
+decomposition + Q-scored synthesis (§7), failure-mode guards (§12), Hermes curator
+(§5), voice scaffold + correction store (§9), evaluation metric harness (§14).
+
+**Genuinely remaining (need infra/GPU/weeks, per the paper's own framing):** automated
+PPO retrain loop (§8), full staged SFT — 500K coding etc. (§10), real STT/TTS backends
++ audio (§9), producing eval records at scale (§14), and enterprise on-prem/RBAC (§16).
 
 To activate the trained brain in production: serve `deploy/runpod/serve_sarva.py` on a
 GPU, set `SARVA_INFERENCE_URL`, then `scripts/plug_sarva_after_train.py --promote --approve`.
