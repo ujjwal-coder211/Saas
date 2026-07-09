@@ -123,6 +123,10 @@ def main() -> int:
     print("Training rows:", len(dataset))
 
     from trl import SFTTrainer, SFTConfig
+    import torch
+
+    # A40/A100 support bf16; Unsloth requires bf16 (not fp16) when the model is bf16.
+    use_bf16 = torch.cuda.is_bf16_supported()
 
     trainer = SFTTrainer(
         model=model,
@@ -138,7 +142,8 @@ def main() -> int:
             warmup_ratio=0.1,
             logging_steps=10,
             save_steps=100,
-            fp16=True,
+            fp16=not use_bf16,
+            bf16=use_bf16,
             dataset_text_field="text",
         ),
     )
