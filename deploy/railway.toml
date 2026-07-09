@@ -1,4 +1,4 @@
 # Legacy copy — Railway uses /railway.toml at repo root.
 
 # Set all secrets in Railway dashboard (see docs/DEPLOY.md)
-# DATABASE_URL, REDIS_URL, provider keys, AKSH_SEARCH_API_KEY, OMNI_* vault keys
+# DATABASE_URL, REDIS_URL, provider keys, AKSH_SEARCH_API_KEY, SARVA_* vault keys

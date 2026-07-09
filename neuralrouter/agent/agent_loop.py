@@ -57,7 +57,7 @@ def _plan_prompt(task: str, file_context: str, rules: str, scope: WorkScope) -> 
     rules_block = rules.strip() or "(no .akshrules)"
     tool_list = ", ".join(ALLOWED_TOOLS)
     return (
-        "You are Aksh Agent (Omni). Break the task into small steps.\n"
+        "You are Aksh Agent (Sarva). Break the task into small steps.\n"
         f"{scope_confirmation(scope)}\n\n"
         "To call a tool, emit exactly one block:\n"
         "```tool\n"
@@ -96,7 +96,7 @@ async def run_agent_loop(
 ) -> AgentResult:
     if not llm_plan:
         raise ValueError(
-            "Omni Agent requires provider API keys (OpenRouter). "
+            "Sarva Agent requires provider API keys (OpenRouter). "
             "Set OPENROUTER_API_KEY in .env and restart the server."
         )
 

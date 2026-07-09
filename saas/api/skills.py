@@ -1,4 +1,4 @@
-"""Aksh Skills / MCP registration — feeds Omni training pipeline."""
+"""Aksh Skills / MCP registration — feeds Sarva training pipeline."""
 
 from __future__ import annotations
 
@@ -26,13 +26,13 @@ async def register_skill(
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
     """
-    Add Skill / MCP — codebase scanned → Omni training vault.
+    Add Skill / MCP — codebase scanned → Sarva training vault.
     Requires tenant API key. User should enable training_opt_in for full pipeline.
     """
     if not auth.user_id:
         raise HTTPException(400, "SaaS tenant required")
 
-    from omni_training.skill_ingest import ingest_from_git_url, ingest_skill_path
+    from sarva_training.skill_ingest import ingest_from_git_url, ingest_skill_path
 
     try:
         if body.git_url:
@@ -53,14 +53,14 @@ async def register_skill(
 
     return {
         "status": "ingested",
-        "message": "Skill codebase added to Omni training queue. Run curate.py → build_dataset.py.",
+        "message": "Skill codebase added to Sarva training queue. Run curate.py → build_dataset.py.",
         **result,
     }
 
 
 @router.get("/list")
 async def list_skills(auth: Annotated[AuthContext, Depends(verify_auth)]):
-    from omni_training.skill_ingest import SKILLS_REGISTRY_PATH
+    from sarva_training.skill_ingest import SKILLS_REGISTRY_PATH
     import json
 
     if not SKILLS_REGISTRY_PATH.exists():

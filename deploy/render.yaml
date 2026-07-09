@@ -20,9 +20,9 @@ services:
         sync: false
       - key: AKSH_SEARCH_API_KEY
         sync: false
-      - key: OMNI_VAULT_HMAC_KEY
+      - key: SARVA_VAULT_HMAC_KEY
         sync: false
-      - key: OMNI_VAULT_ENCRYPTION_KEY
+      - key: SARVA_VAULT_ENCRYPTION_KEY
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false

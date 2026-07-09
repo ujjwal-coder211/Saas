@@ -1,12 +1,12 @@
 # Aksh — User README
 
-**India's AI coding platform by Aitotech.** Powered by **Omni**.
+**India's AI coding platform by Aitotech.** Powered by **Sarva**.
 
 ## Start in 3 steps (no download)
 
 1. Open **https://aitotech.in/aksh** or your deployed URL → `/web/index.html`
 2. **Sign up** at `/web/dashboard/` — save your API key
-3. Open **Aksh Studio** at `/web/studio/` — ask Omni to build your app
+3. Open **Aksh Studio** at `/web/studio/` — ask Sarva to build your app
 
 ## Links
 
@@ -21,14 +21,14 @@
 ## Cursor IDE
 
 - Base URL: `https://api.aksh.aitotech.in/v1`
-- Model: **`omni`**
+- Model: **`sarva`**
 - Guide: `/web/docs/CURSOR_CONNECT.html`
 
 ## What you need
 
 - Modern browser (Chrome, Edge, Firefox)
 - Free Aksh account + API key
-- Optional: Cursor for desktop IDE with Omni backend
+- Optional: Cursor for desktop IDE with Sarva backend
 
 ## Help
 

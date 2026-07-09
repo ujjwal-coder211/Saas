@@ -21,7 +21,7 @@ Files: `Dockerfile`, `docker-compose.prod.yml`, `scripts/docker-entrypoint.sh`
 |----------|------------|
 | API + Postgres + Redis | Delhi NCR |
 | Object storage (projects, vault) | E2E Object Storage (S3-compatible) |
-| Omni train + infer | TIR GPU — Chennai |
+| Sarva train + infer | TIR GPU — Chennai |
 
 Avoid Mumbai DC for new deploys (E2E migrating customers off Mumbai).
 
@@ -38,7 +38,7 @@ Avoid Mumbai DC for new deploys (E2E migrating customers off Mumbai).
    (Wire in `saas/storage/` when S3 adapter is added — local `data/projects/` works for MVP)
 5. **TLS** — `api.aksh.aitotech.in` on load balancer
 6. **Env secrets** — all keys from `.env.example`
-7. **TIR GPU** — deploy Omni inference; set `OMNI_INFERENCE_URL`
+7. **TIR GPU** — deploy Sarva inference; set `SARVA_INFERENCE_URL`
 8. **IndiaAI credits** (optional) — [compute.indiaai.gov.in](https://compute.indiaai.gov.in) — jobs still on E2E
 
 ## Website

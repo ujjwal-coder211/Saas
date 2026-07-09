@@ -6,7 +6,7 @@ The training notebook is ready. **Google Colab runs on your Google account** —
 
 1. Open this link (after notebook is pushed to GitHub):
 
-   https://colab.research.google.com/github/ujjwal-coder211/Saas/blob/main/deploy/colab/OMNI_CONDUCTOR_TRAIN.ipynb
+   https://colab.research.google.com/github/ujjwal-coder211/Saas/blob/main/deploy/colab/SARVA_CONDUCTOR_TRAIN.ipynb
 
 2. **Runtime** → **Change runtime type** → **A100** → Save
 
@@ -15,7 +15,7 @@ The training notebook is ready. **Google Colab runs on your Google account** —
 
 4. **Runtime** → **Run all**
 
-Done. Notebook will download dataset, train, save Drive, push `Ujjwal211/aitotech-omni-v2`.
+Done. Notebook will download dataset, train, save Drive, push `Ujjwal211/aitotech-sarva-v2`.
 
 ## If you send a Colab link
 

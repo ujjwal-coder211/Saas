@@ -2,7 +2,7 @@
 Aksh Search — fetch latest information from the internet.
 
 Set AKSH_SEARCH_API_KEY + AKSH_SEARCH_PROVIDER (tavily|serper|brave).
-Omni Controller calls this when query needs fresh data.
+Sarva Controller calls this when query needs fresh data.
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ class SearchResult:
 def needs_web_search(query: str, mode: str = "auto") -> bool:
     """
     mode: auto | on | off
-    Omni Controller uses this; 'auto' detects freshness intent.
+    Sarva Controller uses this; 'auto' detects freshness intent.
     """
     if not AKSH_SEARCH_ENABLED or mode == "off":
         return False

@@ -1,4 +1,4 @@
-"""Aksh work modes — scope-locked professional behavior for Omni and Agent."""
+"""Aksh work modes — scope-locked professional behavior for Sarva and Agent."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def detect_work_mode(query: str, explicit: WorkMode = "auto") -> WorkMode:
 def build_scope(mode: WorkMode, query: str) -> WorkScope:
     resolved = detect_work_mode(query, mode)
     base = (
-        "You are Omni by Aksh (Aitotech). The user sees only Omni — never mention internal expert models.",
+        "You are Sarva by Aksh (Aitotech). The user sees only Sarva — never mention internal expert models.",
         "Use simple, clear English unless the user writes in another language.",
         "Confirm scope briefly when starting: what you will and will not change.",
     )

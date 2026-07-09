@@ -6,10 +6,10 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-omni_training/data/*.jsonl
-omni_training/data/vault/
-omni_training/data/rlef/
-!omni_training/data/.gitkeep
+sarva_training/data/*.jsonl
+sarva_training/data/vault/
+sarva_training/data/rlef/
+!sarva_training/data/.gitkeep
 
 .DS_Store
 Thumbs.db
@@ -17,3 +17,6 @@ Thumbs.db
 apps/browser/node_modules/
 apps/browser/dist/
 apps/browser/tsconfig.tsbuildinfo
+
+# MCP config (contains API keys)
+.mcp.json

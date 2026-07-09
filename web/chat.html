@@ -57,7 +57,7 @@
 <body>
   <header>
     <h1>⚡ Aksh Chat</h1>
-    <p>Omni · Aksh Search · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/dashboard/">Dashboard</a> · <a href="/web/studio/">Studio</a></p>
+    <p>Sarva · Aksh Search · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/dashboard/">Dashboard</a> · <a href="/web/studio/">Studio</a></p>
   </header>
   <div id="config">
     <label>API URL</label>
@@ -226,8 +226,8 @@
         const metaParts = uiMode === 'agent'
           ? ['Agent', 'mode: ' + (data.work_mode || mode), 'tools: ' + (data.tools_used || []).join(', ')]
           : [
-              'Omni',
-              'mode: ' + ((data.omni_controller && data.omni_controller.work_mode) || mode),
+              'Sarva',
+              'mode: ' + ((data.sarva_controller && data.sarva_controller.work_mode) || mode),
               'search: ' + (data.web_search_used ? 'used' : 'no'),
               data.thread_id ? 'thread saved' : ''
             ].filter(Boolean);

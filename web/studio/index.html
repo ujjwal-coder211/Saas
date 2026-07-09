@@ -449,7 +449,7 @@
     }
 
     function updateSendLabel() {
-      const labels = { chat: 'Send to Omni', agent: 'Run Agent', composer: 'Run Composer' };
+      const labels = { chat: 'Send to Sarva', agent: 'Run Agent', composer: 'Run Composer' };
       document.getElementById('sendBtn').textContent = labels[activeTab] || 'Send';
     }
 
@@ -465,7 +465,7 @@
     function addMsg(role, text, scroll = true) {
       const d = document.createElement('div');
       d.className = 'chat-msg';
-      d.textContent = (role === 'user' ? 'You: ' : 'Omni: ') + text;
+      d.textContent = (role === 'user' ? 'You: ' : 'Sarva: ') + text;
       document.getElementById('chatLog').appendChild(d);
       if (scroll) document.getElementById('chatLog').scrollTop = 99999;
     }

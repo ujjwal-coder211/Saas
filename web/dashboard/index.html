@@ -24,7 +24,7 @@
 </head>
 <body>
   <h1>Aksh Dashboard</h1>
-  <p class="sub">Omni · API keys · usage · skills · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/chat.html">Chat</a> · <a href="/web/studio/">Studio</a></p>
+  <p class="sub">Sarva · API keys · usage · skills · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/chat.html">Chat</a> · <a href="/web/studio/">Studio</a></p>
 
   <div class="grid">
     <div class="card">
@@ -53,14 +53,14 @@
     </div>
 
     <div class="card">
-      <h2>Training opt-in (Omni)</h2>
+      <h2>Training opt-in (Sarva)</h2>
       <p class="sub">Default OFF — your data stays private.</p>
       <button class="secondary" onclick="setOptIn(true)">Enable opt-in</button>
       <button class="secondary" onclick="setOptIn(false)">Disable opt-in</button>
     </div>
 
     <div class="card">
-      <h2>Add Skill / MCP → Omni train</h2>
+      <h2>Add Skill / MCP → Sarva train</h2>
       <label>Skill name</label>
       <input id="skillName" placeholder="my-mcp-server" />
       <label>Git URL (public repo)</label>
@@ -71,7 +71,7 @@
     </div>
 
     <div class="card">
-      <h2>Omni Brain (active)</h2>
+      <h2>Sarva Brain (active)</h2>
       <div class="stat" id="brainVersion" style="font-size:1.1rem">—</div>
       <p class="sub" id="brainMeta">Load with API key</p>
       <button class="secondary" onclick="loadBrain()">Refresh brain</button>
@@ -191,11 +191,11 @@
 
     async function loadBrain() {
       try {
-        const data = await api('/v1/omni/brain');
+        const data = await api('/v1/sarva/brain');
         const active = data.active || {};
         document.getElementById('brainVersion').textContent = active.version_id || data.active_version_id || '—';
         document.getElementById('brainMeta').textContent =
-          (active.label || 'Omni') + ' · type=' + (active.type || '?') + ' · updated ' + (data.updated_at || '');
+          (active.label || 'Sarva') + ' · type=' + (active.type || '?') + ' · updated ' + (data.updated_at || '');
       } catch (e) {
         document.getElementById('brainMeta').textContent = 'Error: ' + e.message;
       }

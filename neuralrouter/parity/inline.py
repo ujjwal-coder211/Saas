@@ -1,4 +1,4 @@
-"""Inline edit (Cursor Cmd+K style) and tab completion via Omni."""
+"""Inline edit (Cursor Cmd+K style) and tab completion via Sarva."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ async def inline_edit(
         "Return ONLY the replacement text for the selection — no markdown fences, no explanation."
     )
     system = (
-        "You are Omni inline edit. Output only the new code that replaces the selection. "
+        "You are Sarva inline edit. Output only the new code that replaces the selection. "
         "Keep indentation consistent."
     )
     result = await call_model(prompt, "qwen", system_prompt=system)
@@ -36,7 +36,7 @@ async def inline_edit(
         replacement = "\n".join(lines)
     return {
         "replacement": replacement,
-        "model": "omni",
+        "model": "sarva",
     }
 
 
@@ -64,6 +64,6 @@ async def tab_complete(
         "Return ONLY the completion suffix (what comes after the prefix), max 120 chars. "
         "If nothing useful, return empty string."
     )
-    result = await call_model(prompt, "qwen", system_prompt="You are Omni Tab completion.")
+    result = await call_model(prompt, "qwen", system_prompt="You are Sarva Tab completion.")
     completion = (result.get("content") or "").strip().replace("\n", " ")[:120]
-    return {"completion": completion, "model": "omni"}
+    return {"completion": completion, "model": "sarva"}

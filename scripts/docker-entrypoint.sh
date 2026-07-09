@@ -33,7 +33,7 @@ PY
 echo "[Aksh] Applying schema (idempotent)..."
 python scripts/init_db.py || true
 
-mkdir -p /app/data/projects /app/omni_training/data/vault
+mkdir -p /app/data/projects /app/sarva_training/data/vault
 
 echo "[Aksh] Starting API on port ${PORT:-8000}..."
 exec uvicorn neuralrouter.main:app --host 0.0.0.0 --port "${PORT:-8000}"

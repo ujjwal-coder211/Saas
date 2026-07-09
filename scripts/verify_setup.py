@@ -34,7 +34,7 @@ def check_imports() -> list[str]:
     modules = [
         "neuralrouter.main",
         "neuralrouter.chat_service",
-        "neuralrouter.omni_controller",
+        "neuralrouter.sarva_controller",
         "neuralrouter.work_modes",
         "neuralrouter.project_context",
         "neuralrouter.deploy.kit",
@@ -42,9 +42,9 @@ def check_imports() -> list[str]:
         "neuralrouter.parity.router",
         "neuralrouter.parity.composer",
         "neuralrouter.search.web_search",
-        "omni_training.brain_registry",
-        "omni_training.scheduler",
-        "omni_training.skill_ingest",
+        "sarva_training.brain_registry",
+        "sarva_training.scheduler",
+        "sarva_training.skill_ingest",
     ]
     for mod in modules:
         try:
@@ -58,7 +58,7 @@ def check_imports() -> list[str]:
 
 def check_brain_registry() -> list[str]:
     errors: list[str] = []
-    reg_path = ROOT / "omni_training" / "brain_registry.json"
+    reg_path = ROOT / "sarva_training" / "brain_registry.json"
     if not reg_path.exists():
         _fail(f"missing {reg_path}")
         return ["brain_registry.json"]

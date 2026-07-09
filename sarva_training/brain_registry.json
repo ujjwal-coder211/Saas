@@ -1,0 +1,35 @@
+{
+  "active_version_id": "sarva-rules-v0",
+  "updated_at": "2026-06-20T00:00:00+00:00",
+  "versions": {
+    "sarva-rules-v0": {
+      "id": "sarva-rules-v0",
+      "label": "Sarva Controller (rules)",
+      "type": "rules",
+      "status": "active",
+      "description": "Heuristic controller — routes experts, search, style until trained brain promoted.",
+      "artifact": null,
+      "metrics": {},
+      "created_at": "2026-06-20T00:00:00+00:00"
+    },
+    "sarva-v1": {
+      "id": "sarva-v1",
+      "label": "Sarva v1 LoRA",
+      "type": "lora_hf",
+      "status": "candidate",
+      "description": "First trained Sarva adapter — Nemotron-Nano-30B fine-tuned on RunPod. Promote when eval passes your checklist.",
+      "artifact": {
+        "base_model": "nvidia/Nemotron-3-Nano-30B-A3B",
+        "adapter_repo": "Ujjwal211/aitotech-sarva-v1",
+        "adapter_path": null,
+        "train_platform": "runpod"
+      },
+      "metrics": {
+        "eval_score": null,
+        "manual_approved": false
+      },
+      "trained_at": null,
+      "created_at": "2026-06-20T00:00:00+00:00"
+    }
+  }
+}

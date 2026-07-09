@@ -1,4 +1,4 @@
-# Seed omni_v1_train.jsonl from legacy aitotech-sarva-data format (optional one-time)
+# Seed sarva_v1_train.jsonl from legacy aitotech-sarva-data format (optional one-time)
 """Convert old expert/question/answer JSONL into curated SFT messages format."""
 
 from __future__ import annotations
@@ -6,11 +6,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-LEGACY = Path(__file__).resolve().parents[1].parent / "aitotech-sarva-data" / "output" / "omni_v1_train.jsonl"
-OUT = Path(__file__).resolve().parents[1] / "omni_training" / "data" / "seed_manual.jsonl"
+LEGACY = Path(__file__).resolve().parents[1].parent / "aitotech-sarva-data" / "output" / "sarva_v1_train.jsonl"
+OUT = Path(__file__).resolve().parents[1] / "sarva_training" / "data" / "seed_manual.jsonl"
 
-OMNI_SYSTEM = (
-    "You are Omni, an assistant trained on diverse expert response patterns "
+SARVA_SYSTEM = (
+    "You are Sarva, an assistant trained on diverse expert response patterns "
     "across reasoning, coding, research, and multilingual domains."
 )
 
@@ -26,7 +26,7 @@ def convert_row(old: dict) -> dict:
 
     return {
         "messages": [
-            {"role": "system", "content": OMNI_SYSTEM},
+            {"role": "system", "content": SARVA_SYSTEM},
             {"role": "user", "content": old.get("question", old.get("query", ""))},
             {"role": "assistant", "content": content},
         ],

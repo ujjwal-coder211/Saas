@@ -83,7 +83,7 @@ docker compose up -d --build
 
 ## E2E Networks (India)
 - API VM: Delhi region
-- GPU inference (Omni): separate service — see Aksh docs/E2E_DEPLOY.md
+- GPU inference (Sarva): separate service — see Aksh docs/E2E_DEPLOY.md
 
 ## Health check
 ```bash

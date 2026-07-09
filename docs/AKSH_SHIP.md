@@ -1,6 +1,6 @@
 # Aksh Ship — idea to deploy (functional)
 
-Omni work modes control scope. User sees only **Omni**; experts route in the background.
+Sarva work modes control scope. User sees only **Sarva**; experts route in the background.
 
 ## Work modes
 
@@ -12,7 +12,7 @@ Omni work modes control scope. User sees only **Omni**; experts route in the bac
 | **guard** | Security scan + report — no edits unless asked |
 | **explain** | Read-only explanations |
 | **deploy** | Docker, compose, K8s templates, DEPLOY.md |
-| **auto** | Omni detects from your message |
+| **auto** | Sarva detects from your message |
 
 ## Normal user (Aksh Cloud)
 
@@ -25,7 +25,7 @@ Omni work modes control scope. User sees only **Omni**; experts route in the bac
 ## Enterprise (on-prem)
 
 - Set agent `project_root` to your Git checkout path on the server  
-- Code stays on your network; Omni routes experts locally  
+- Code stays on your network; Sarva routes experts locally  
 - Use **fix / extend / guard** modes for scoped professional work  
 - Deploy kit generates artifacts for **your** CI/CD (Jenkins, Argo, internal K8s)
 
@@ -50,4 +50,4 @@ See [E2E_DEPLOY.md](./E2E_DEPLOY.md). After deploy kit:
 docker compose up -d --build
 ```
 
-Target: Delhi API VM + optional Chennai GPU for Omni inference.
+Target: Delhi API VM + optional Chennai GPU for Sarva inference.

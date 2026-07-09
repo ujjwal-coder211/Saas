@@ -3,5 +3,5 @@ __pycache__
 *.pyc
 .env
 .git
-omni_training/data/vault/*
-!omni_training/data/.gitkeep
+sarva_training/data/vault/*
+!sarva_training/data/.gitkeep

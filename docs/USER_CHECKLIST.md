@@ -12,7 +12,7 @@ Ye checklist sab blocks ko **proper complete** karne ke liye hai — local dev s
   - `NEURALROUTER_API_KEYS=dev-key-123` (local testing)
   - `DATABASE_URL=postgresql://...` (Docker Postgres)
   - `SAAS_ALLOW_PUBLIC_SIGNUP=true`
-  - `OMNI_VAULT_HMAC_KEY`, `OMNI_VAULT_ENCRYPTION_KEY` (random strings)
+  - `SARVA_VAULT_HMAC_KEY`, `SARVA_VAULT_ENCRYPTION_KEY` (random strings)
 - [ ] `docker compose up --build`
 - [ ] `python scripts/init_db.py` — naye tables (threads, projects)
 - [ ] Verify: `python scripts/verify_setup.py`
@@ -27,7 +27,7 @@ Ye checklist sab blocks ko **proper complete** karne ke liye hai — local dev s
 - [ ] Optional: Moonshot, DeepInfra keys
 - [ ] Optional search: `AKSH_SEARCH_API_KEY` (Tavily) + `AKSH_SEARCH_PROVIDER=tavily`
 
-**Bina in keys ke Omni experts jawab nahi de payenge** (routing fail).
+**Bina in keys ke Sarva experts jawab nahi de payenge** (routing fail).
 
 ---
 
@@ -38,8 +38,8 @@ Ye checklist sab blocks ko **proper complete** karne ke liye hai — local dev s
 - [ ] Dashboard signup → API key save
 - [ ] Studio: cloud project create / zip upload
 - [ ] Chat thread: naya thread → message → refresh → history wapas
-- [ ] Omni label: response mein `brain_used: omni` (experts hidden)
-- [ ] Cursor: model `omni`, base URL `/v1`
+- [ ] Sarva label: response mein `brain_used: sarva` (experts hidden)
+- [ ] Cursor: model `sarva`, base URL `/v1`
 
 ---
 
@@ -48,7 +48,7 @@ Ye checklist sab blocks ko **proper complete** karne ke liye hai — local dev s
 - [ ] Account: [myaccount.e2enetworks.com](https://myaccount.e2enetworks.com)
 - [ ] **Delhi NCR** — API VM + Postgres + Redis
 - [ ] **E2E Object Storage** — bucket for projects + vault backup
-- [ ] **Chennai TIR GPU** — Omni train + `OMNI_INFERENCE_URL`
+- [ ] **Chennai TIR GPU** — Sarva train + `SARVA_INFERENCE_URL`
 - [ ] Domain: `api.aksh.aitotech.in` → E2E load balancer
 - [ ] Website: `aitotech.in/aksh` → reverse proxy to Aksh app
 - [ ] See: `docs/E2E_DEPLOY.md`
@@ -73,7 +73,7 @@ Ye checklist sab blocks ko **proper complete** karne ke liye hai — local dev s
 
 ---
 
-## Block 7 — Omni brain train (System 2)
+## Block 7 — Sarva brain train (System 2)
 
 - [ ] Usage + feedback → vault
 - [ ] `scripts/run_pipeline.ps1`

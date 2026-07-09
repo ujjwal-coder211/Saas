@@ -1,4 +1,4 @@
-"""Load cloud project rules, files, and codebase search context for Omni."""
+"""Load cloud project rules, files, and codebase search context for Sarva."""
 
 from __future__ import annotations
 

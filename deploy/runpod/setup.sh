@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Omni Conductor — RunPod pod setup. Run once after the pod boots.
+# Sarva Conductor — RunPod pod setup. Run once after the pod boots.
 # Usage:  bash deploy/runpod/setup.sh
 set -e
 
@@ -21,4 +21,4 @@ if torch.cuda.is_available():
     print("VRAM GB:", round(torch.cuda.get_device_properties(0).total_memory / 1e9, 1))
 PY
 
-echo "==> Setup done. Now: export HF_TOKEN=...  then  python deploy/runpod/train_omni.py"
+echo "==> Setup done. Now: export HF_TOKEN=...  then  python deploy/runpod/train_sarva.py"

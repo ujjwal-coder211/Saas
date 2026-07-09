@@ -12,13 +12,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY neuralrouter ./neuralrouter
-COPY omni_training ./omni_training
+COPY sarva_training ./sarva_training
 COPY saas ./saas
 COPY web ./web
 COPY scripts ./scripts
 
 RUN chmod +x /app/scripts/docker-entrypoint.sh \
-    && mkdir -p /app/data/projects /app/omni_training/data/vault
+    && mkdir -p /app/data/projects /app/sarva_training/data/vault
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

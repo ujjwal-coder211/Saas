@@ -24,7 +24,7 @@ _clients: dict[str, AsyncOpenAI] = {}
 
 
 def provider_configured() -> bool:
-    """True when at least OpenRouter is configured (minimum for Omni chat/agent)."""
+    """True when at least OpenRouter is configured (minimum for Sarva chat/agent)."""
     return bool(OPENROUTER_API_KEY and OPENROUTER_API_KEY not in ("", "not-configured"))
 
 

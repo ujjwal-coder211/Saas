@@ -43,10 +43,10 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - omni_vault:/app/omni_training/data/vault
+      - sarva_vault:/app/sarva_training/data/vault
       - project_data:/app/data/projects
 
 volumes:
   pgdata:
-  omni_vault:
+  sarva_vault:
   project_data:

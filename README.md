@@ -38,7 +38,7 @@ docker compose up --build
 
 ## Model routing (free tier)
 
-Each user task is classified (code, debug, git, refactor, tests). Routely picks **one** best matching slot from `omni_training/models_registry/` — all use OpenRouter `:free` models by default.
+Each user task is classified (code, debug, git, refactor, tests). Routely picks **one** best matching slot from `sarva_training/models_registry/` — all use OpenRouter `:free` models by default.
 
 Set `NEURALROUTER_MAX_EXPERTS=1` (default) for single-model replies.
 

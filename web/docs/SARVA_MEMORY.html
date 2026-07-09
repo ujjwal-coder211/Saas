@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sarva Memory — Aksh</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0f1419; color:#e6edf3; padding:24px; max-width:720px; line-height:1.7; }
+    a { color:#58a6ff; }
+    code { background:#161b22; padding:2px 6px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <a href="/web/docs/">← Docs</a>
+  <h1>Sarva Memory</h1>
+  <p>Har user ki <strong>alag</strong> chat threads — kisi aur user se mix nahi.</p>
+  <h2>Studio / Chat</h2>
+  <p>Thread sidebar se purani chat wapas kholo. Naya thread = nayi memory.</p>
+  <h2>API</h2>
+  <ul>
+    <li><code>GET /saas/v1/threads</code></li>
+    <li><code>POST /saas/v1/threads</code></li>
+    <li><code>GET /saas/v1/threads/{id}/messages</code></li>
+    <li><code>POST /v1/chat</code> with <code>thread_id</code></li>
+  </ul>
+  <p>Requires signup + Postgres (<code>DATABASE_URL</code>).</p>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "built_at": "2026-06-25T12:04:09.074123+00:00",
+  "total": 2154,
+  "routing": 1151,
+  "synthesis": 313,
+  "cot": 690,
+  "sarva_augmented": 690,
+  "bootstrap_only": false,
+  "files": {
+    "routing": "C:\\Users\\ujjwa\\Saas\\sarva_training\\data\\export\\routing_train.jsonl",
+    "synthesis": "C:\\Users\\ujjwa\\Saas\\sarva_training\\data\\export\\synthesis_train.jsonl",
+    "cot": "C:\\Users\\ujjwa\\Saas\\sarva_training\\data\\export\\cot_train.jsonl",
+    "combined": "C:\\Users\\ujjwa\\Saas\\sarva_training\\data\\export\\conductor_v1_train.jsonl"
+  }
+}

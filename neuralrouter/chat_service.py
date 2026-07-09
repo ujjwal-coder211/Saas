@@ -1,4 +1,4 @@
-"""Core chat orchestration — Omni Controller → experts → answer."""
+"""Core chat orchestration — Sarva Controller → experts → answer."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ import time
 from dataclasses import dataclass, field
 from typing import Literal
 
-from omni_training.model_analyzer import analyze_model_behavior
-from omni_training.rlef import build_and_log
-from omni_training.schema import ResponsePattern
+from sarva_training.model_analyzer import analyze_model_behavior
+from sarva_training.rlef import build_and_log
+from sarva_training.schema import ResponsePattern
 
 from neuralrouter.model_clients import call_model
-from neuralrouter.omni_controller import OmniPlan, apply_search_context, build_system_prompt, plan_turn
-from neuralrouter.omni_brain.loader import omni_native_plan_hint
-from neuralrouter.omni_brain.refine import refine
+from neuralrouter.sarva_controller import SarvaPlan, apply_search_context, build_system_prompt, plan_turn
+from neuralrouter.sarva_brain.loader import sarva_native_plan_hint
+from neuralrouter.sarva_brain.refine import refine
 from neuralrouter.project_context import enrich_message_with_project
 from neuralrouter.router import REGISTRY, confidence_for
 from neuralrouter.search.web_search import aksh_search
@@ -40,7 +40,7 @@ class ChatResult:
     completion_tokens: int | None
     response_time_s: float
     sub_model_responses: list[dict] = field(default_factory=list)
-    omni_plan: dict | None = None
+    sarva_plan: dict | None = None
     web_search_used: bool = False
     verified: bool | None = None
     verification_issues: list = field(default_factory=list)
@@ -71,7 +71,7 @@ def _behavior_summary(model_id: str, expert_id: str, content: str) -> dict:
     }
 
 
-async def _run_with_plan(plan: OmniPlan) -> ChatResult:
+async def _run_with_plan(plan: SarvaPlan) -> ChatResult:
     start = time.time()
     sub_behaviors: list[dict] = []
     experts = plan.experts
@@ -138,7 +138,7 @@ async def _run_with_plan(plan: OmniPlan) -> ChatResult:
         completion_tokens=completion_tokens,
         response_time_s=elapsed,
         sub_model_responses=sub_behaviors,
-        omni_plan={
+        sarva_plan={
             "reasoning": plan.reasoning,
             "output_style": plan.output_style,
             "search_mode": plan.search_mode,
@@ -189,9 +189,9 @@ async def run_chat(
 
     plan = plan_turn(enriched, force_model=force_model, search_mode=search_mode, work_mode=work_mode)
 
-    hint = await omni_native_plan_hint(enriched)
+    hint = await sarva_native_plan_hint(enriched)
     if hint:
-        plan = OmniPlan(
+        plan = SarvaPlan(
             query=plan.query,
             experts=plan.experts,
             use_web_search=plan.use_web_search,
@@ -202,7 +202,7 @@ async def run_chat(
             scope_summary=plan.scope_summary,
             system_directives=plan.system_directives + [hint],
             search_context=plan.search_context,
-            reasoning=plan.reasoning + "; omni_inference_hint=on",
+            reasoning=plan.reasoning + "; sarva_inference_hint=on",
             brain_version_id=plan.brain_version_id,
             brain_type=plan.brain_type,
             confidence=plan.confidence,

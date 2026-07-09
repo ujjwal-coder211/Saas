@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS project_files (
 
 CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
 
--- Omni Memory — per-user chat threads
+-- Sarva Memory — per-user chat threads
 CREATE TABLE IF NOT EXISTS chat_threads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

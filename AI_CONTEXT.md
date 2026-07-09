@@ -9,17 +9,20 @@
 ## 1. Project ek line mein
 
 **Saira** (research paper ka naam) = **Routely** (product, by Aitotech) — ek universal AI agent
-jiska dimaag **Omni** conductor model hai. Omni har task ke liye best free LLM choose karta hai
-(learned routing), aur system teen layers par bana hai: **Omni** (cognition), **Harness** (execution),
+jiska dimaag **Sarva** conductor model hai. Sarva har task ke liye best free LLM choose karta hai
+(learned routing), aur system teen layers par bana hai: **Sarva** (cognition), **Harness** (execution),
 **Hermes** (memory/learning).
 
 - GitHub: https://github.com/ujjwal-coder211/Saas
 - Local repo: `C:\Users\ujjwa\Saas`
-- Research paper: **`Saira_Research_Paper_v4.docx`** (Downloads mein) — latest spec. (v2 purana hai.)
-  v4 mein Omni ab **Conductor + Executor + Learner** hai (sirf router nahi): confidence-based
-  self-routing (§3.3), refinement layer (§3.4), multi-source distillation (§3.5). Aur 5 naye sections:
-  **Security §5, Failure Modes §12, Enterprise/B2B §13, Future of Work §14, Competitive Moat §15.**
-  Note: **GLM-5.2 base model NAHI** — ye ek open-weight *delegate teacher* hai (Nemotron-Nano-30B hi base rahega).
+- Research paper: **`Saira_Research_Paper_v6.docx`** (andar "Version 5.0", Jul 2026) — latest spec. (v2/v4 purane.)
+  - **Conductor ab "Sarva" naam se hai** (= code ka "Sarva"). Sarva = Conductor + Executor + Learner:
+    confidence-gated self-routing + refinement + multi-source distillation.
+  - v6 poora **honest academic report** ban gaya — "designed vs implemented vs validated" clearly alag.
+    Saaf likha: **abhi koi trained model nahi**, saare targets sirf hypotheses.
+  - Naye sections: **§2 Related Work, §8.3 Objective Stability (alignment/drift), §13 Implementation Status
+    (= hamara prototype + harvest, 29 tests).** Security (§6) designed hai par **implemented nahi** (permission gate abhi stub).
+  - **GLM base model NAHI** — open-weight *delegate teacher* (GLM/DeepSeek/Kimi/Qwen). Base = Nemotron-Nano-30B.
 
 ---
 
@@ -27,10 +30,10 @@ jiska dimaag **Omni** conductor model hai. Omni har task ke liye best free LLM c
 
 | Paper layer (v4) | Status | Kahaan hai code |
 |---|---|---|
-| **Omni — Cognition (Conductor+Executor+Learner)** | 🟡 Rules routing + **ab confidence self-assess (§3.3) + refine (§3.4) bhi** (port ho gaya). Trained 30B model abhi wire nahi. | `neuralrouter/omni_controller.py`, `omni_brain/confidence.py` + `refine.py` (NEW), `omni_brain/loader.py`, `omni_training/` |
+| **Sarva — Cognition (Conductor+Executor+Learner)** | 🟡 Rules routing + **ab confidence self-assess (§3.3) + refine (§3.4) bhi** (port ho gaya). Trained 30B model abhi wire nahi. | `neuralrouter/sarva_controller.py`, `sarva_brain/confidence.py` + `refine.py` (NEW), `sarva_brain/loader.py`, `sarva_training/` |
 | **Harness — Execution** | 🟢 File/shell/git + browser + system tools. | `neuralrouter/agent/tools.py`, `neuralrouter/parity/` |
-| **Hermes — Memory** | 🟡 Threads + skills storage; RLEF reward logging. | `saas/api/threads.py`, `saas/api/skills.py`, `omni_training/skill_ingest.py` |
-| **RLEF self-evolution (§7)** | 🟢 Loop close (logging + collect_cycle); ab R_exec ko refine verification feed karta hai. | `omni_training/rlef.py` |
+| **Hermes — Memory** | 🟡 Threads + skills storage; RLEF reward logging. | `saas/api/threads.py`, `saas/api/skills.py`, `sarva_training/skill_ingest.py` |
+| **RLEF self-evolution (§7)** | 🟢 Loop close (logging + collect_cycle); ab R_exec ko refine verification feed karta hai. | `sarva_training/rlef.py` |
 | **Security & Trust (§5) [v4 NEW]** | 🔴 Permission gate / vault / injection firewall abhi nahi. | — |
 | **Failure Modes (§12) [v4 NEW]** | 🔴 Catalog + mitigations abhi nahi. | — |
 | **Enterprise/B2B (§13) [v4 NEW]** | 🟡 Tier-gated routing hai; on-prem/RBAC/audit nahi. | `saas/billing/plans.py` |
@@ -40,8 +43,8 @@ jiska dimaag **Omni** conductor model hai. Omni har task ke liye best free LLM c
 brain hot-swap registry) ban chuke hain. Asli missing cheez = **trained brain khud** + voice + (ab tak)
 browser/RLEF — jinme se browser aur RLEF is session mein ban gaye.
 
-`omni_training/brain_registry.json` confirm karta hai: `active_version_id` abhi bhi `omni-rules-v0` hai;
-`omni-v1` ek `candidate` hai jiska `eval_score: null`.
+`sarva_training/brain_registry.json` confirm karta hai: `active_version_id` abhi bhi `sarva-rules-v0` hai;
+`sarva-v1` ek `candidate` hai jiska `eval_score: null`.
 
 ---
 
@@ -61,7 +64,7 @@ browser/RLEF — jinme se browser aur RLEF is session mein ban gaye.
    - Native OS, koi hard dependency nahi (`clip`/`pbcopy`/`xclip`, `osascript`/`notify-send`/PowerShell toast).
    - Headless server par graceful degrade.
 
-3. **`omni_training/rlef.py`** — RLEF reward logging (paper §5.2.3 / §7.5.1 / §8.2).
+3. **`sarva_training/rlef.py`** — RLEF reward logging (paper §5.2.3 / §7.5.1 / §8.2).
    - `compute_reward(...)` = `0.45·R_exec + 0.25·R_quality + 0.15·R_cost + 0.10·R_latency + 0.05·R_user`
      (paper ka exact formula).
    - `RoutingRecord` dataclass = paper §5.2.3 record.
@@ -79,39 +82,39 @@ browser/RLEF — jinme se browser aur RLEF is session mein ban gaye.
 
 5. **`neuralrouter/chat_service.py`** — har turn par RLEF `RoutingRecord` log hota hai.
    - `run_chat(...)` mein `build_and_log(...)` call (best-effort, try/except wrapped — user response kabhi break nahi hota).
-   - Import: `from omni_training.rlef import build_and_log`.
+   - Import: `from sarva_training.rlef import build_and_log`.
 
-6. **`.gitignore`** — `omni_training/data/rlef/` add hua (runtime-generated records commit na ho).
+6. **`.gitignore`** — `sarva_training/data/rlef/` add hua (runtime-generated records commit na ho).
 
 ### ✅ Verify / test
 
 - Smoke test pass hua: 22 tools registered, browser bina Playwright graceful degrade, clipboard write OK,
   reward math `0.906` sahi component breakdown ke saath, `build_and_log` + `collect_cycle` round-trip OK.
-- Test ledger (`omni_training/data/rlef/`) cleanup kar diya gaya.
+- Test ledger (`sarva_training/data/rlef/`) cleanup kar diya gaya.
 - **Kuch commit nahi hua** — user ne abhi commit nahi bola.
 
 ---
 
 ## 4. Sabse important baat (ⓘ padho — yeh #1 pending gap hai)
 
-**Trained brain abhi bhi routing change nahi karta.** `omni_native_plan_hint` (`neuralrouter/chat_service.py:181`)
+**Trained brain abhi bhi routing change nahi karta.** `sarva_native_plan_hint` (`neuralrouter/chat_service.py:181`)
 sirf system *directives* inject karta hai — woh kabhi `activate_experts` ke model choice ko **override nahi karta**.
-Matlab trained Omni v2 aane ke baad bhi, jab tak yeh wire nahi hota, woh actually kaunsa model chalega yeh decide
+Matlab trained Sarva v2 aane ke baad bhi, jab tak yeh wire nahi hota, woh actually kaunsa model chalega yeh decide
 nahi kar paata.
 
 ➡️ **Next code step (Step 2):** `plan_turn` / `run_chat` ko aise banana ki native hint experts ko override kare.
 Tab tak routing rules-based hi rahega.
 
-### 4.1 Omni Phase-1 port (2026-07-05) — confidence + refine
+### 4.1 Sarva Phase-1 port (2026-07-05) — confidence + refine
 
-`saira_harvest_1.zip` ke `src/omni/` (v4 §3.3/§3.4) ko `neuralrouter/omni_brain/` mein port kiya:
+`saira_harvest_1.zip` ke `src/sarva/` (v4 §3.3/§3.4) ko `neuralrouter/sarva_brain/` mein port kiya:
 - **`confidence.py`** — `self_assess(query, task_type)` (lexical + optional historical blend) + `threshold_for()`.
-  `omni_controller.plan_turn` ab har turn ke liye confidence + `self_handled` decide karke `OmniPlan` par set karta hai.
+  `sarva_controller.plan_turn` ab har turn ke liye confidence + `self_handled` decide karke `SarvaPlan` par set karta hai.
 - **`refine.py`** — `refine(draft)` deterministic verification (Python syntax check, TODO/placeholder detection).
   `chat_service._run_with_plan` ab answer ko refine karke `ChatResult.verified` + `verification_issues` set karta hai,
   aur ye verification **RLEF ke R_exec signal** mein feed hota hai (pehle sirf proxy tha — ab real).
-- **Note:** `saira_harvest_1.zip` `omni_training/harvest/` (jo committed hai) ka bada superset hai. Humne
-  Omni *logic* port kiya (do parallel Omni maintain nahi karna); `omni_training/harvest/` abhi Phase-0-only stale copy hai.
+- **Note:** `saira_harvest_1.zip` `sarva_training/harvest/` (jo committed hai) ka bada superset hai. Humne
+  Sarva *logic* port kiya (do parallel Sarva maintain nahi karna); `sarva_training/harvest/` abhi Phase-0-only stale copy hai.
 
 ⚠️ **Regression recovery (2026-07-05):** ek external tool (shayad Cursor) ne working-tree ke `tools.py` +
 `chat_service.py` ko purane version par revert kar diya tha (browser tools + RLEF gayab). Committed HEAD safe tha —
@@ -122,8 +125,8 @@ git ops mat chalao, warna working tree revert ho sakta hai.**
 
 ## 4.5 Saira Harvest — training-data harvesting engine (NEW component, 2026-06-30)
 
-Ek production-grade **async batch LLM harvesting engine** — ab repo mein `omni_training/harvest/` ke andar
-integrate ho chuka (2026-06-30). Yeh Omni ke **training data pipeline** ka scale engine hai — model pool ko
+Ek production-grade **async batch LLM harvesting engine** — ab repo mein `sarva_training/harvest/` ke andar
+integrate ho chuka (2026-06-30). Yeh Sarva ke **training data pipeline** ka scale engine hai — model pool ko
 bade paimane par query karke SFT / synthesis datasets aur routing labels banata hai
 (paper §7.4: "run each task through all models in pool, measure R scores" ka exact tool).
 
@@ -136,12 +139,12 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 - Token/cost tracking + structured JSON logging. Secrets sirf `OPENROUTER_API_KEY` env se.
 
 **Stack:** `aiosqlite`, `httpx`, `PyYAML`. OpenRouter-compatible endpoint.
-**Run (harvest folder se):** `cd omni_training/harvest && python -m src.main --queries queries.txt --config config/settings.yaml`
-→ output `reservoir.jsonl` + `state.db`. Deps: `pip install -r omni_training/harvest/requirements.txt`
+**Run (harvest folder se):** `cd sarva_training/harvest && python -m src.main --queries queries.txt --config config/settings.yaml`
+→ output `reservoir.jsonl` + `state.db`. Deps: `pip install -r sarva_training/harvest/requirements.txt`
 (aiosqlite + PyYAML main `requirements.txt` mein bhi merge kiye).
 
-**Saira mein role:** yeh harvest ka `reservoir.jsonl` → `omni_training/` ke dataset builders
-(`build_conductor_dataset.py` / `build_dataset.py` / `ingest_post_train.py`) mein feed hoga → RunPod par Omni training.
+**Saira mein role:** yeh harvest ka `reservoir.jsonl` → `sarva_training/` ke dataset builders
+(`build_conductor_dataset.py` / `build_dataset.py` / `ingest_post_train.py`) mein feed hoga → RunPod par Sarva training.
 
 **TODO (next):** `reservoir.jsonl` → dataset-builder format ka adapter likhna (harvest output ko conductor/routing/synthesis JSONL mein convert).
 
@@ -150,16 +153,16 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 ## 5. Roadmap — bache hue steps (order mein)
 
 - **Step 0 ✅** — current data export commit karna (cot/routing/synthesis `.jsonl`; bade `.zip` ignore).
-- **Step 0.5 ✅ (integrate done)** — **Saira Harvest** engine `omni_training/harvest/` mein aa gaya.
+- **Step 0.5 ✅ (integrate done)** — **Saira Harvest** engine `sarva_training/harvest/` mein aa gaya.
   Baaki: `reservoir.jsonl` → dataset-builder format adapter, phir model pool query → RunPod training.
 - **Step 1 (USER ka kaam) — PLATFORM CHANGED (2026-06-30):** base model wahi **Nemotron-Nano-30B**
   (no change), bas training ab **RunPod** par hogi (pehle Google Colab thi).
   Flow: Nemotron-Nano-30B → RunPod GPU pod par LoRA/QLoRA fine-tune → adapter HF par push
-  (`Ujjwal211/aitotech-omni-v2`) → `brain_registry.json` mein candidate register.
-  - **RunPod kit ready:** `deploy/runpod/` — `train_omni.py` (standalone QLoRA script, env-driven),
+  (`Ujjwal211/aitotech-sarva-v2`) → `brain_registry.json` mein candidate register.
+  - **RunPod kit ready:** `deploy/runpod/` — `train_sarva.py` (standalone QLoRA script, env-driven),
     `setup.sh` (deps), `README_RUNPOD.md` (exact step-by-step). Data repo mein committed
     (`conductor_v1_train.jsonl`, 2154 rows), to pod par sirf `git clone` + 4 commands.
-  - Pod par: `bash deploy/runpod/setup.sh` → `export HF_TOKEN=...` → `python deploy/runpod/train_omni.py`.
+  - Pod par: `bash deploy/runpod/setup.sh` → `export HF_TOKEN=...` → `python deploy/runpod/train_sarva.py`.
   - Colab notebook (`deploy/colab/`) ab secondary/fallback path hai.
 - **Step 2 (NEXT CODE — #1 gap)** — trained brain ko routing mein wire karna (upar section 4 dekho).
 - **Step 3** — `brain_eval.py` se eval, threshold (>2% RA) pass hone par `brain_promote.py` se `active_version_id` flip.
@@ -171,10 +174,10 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 
 ## 6. RLEF loop kaise chalana hai (end-to-end)
 
-1. Chat chalti rahe → har turn auto-log hota hai `omni_training/data/rlef/routing_records.jsonl` mein.
+1. Chat chalti rahe → har turn auto-log hota hai `sarva_training/data/rlef/routing_records.jsonl` mein.
    (Override: env `RLEF_RECORDS_PATH`.)
-2. ~1,000 records jama hone par: `python -m omni_training.rlef` → cycle batch + manifest banta hai
-   `omni_training/data/rlef/cycles/` mein.
+2. ~1,000 records jama hone par: `python -m sarva_training.rlef` → cycle batch + manifest banta hai
+   `sarva_training/data/rlef/cycles/` mein.
 3. Us batch ko Colab/training mein feed karo (routing-head LoRA).
 4. `brain_eval.py` → pass ho to `brain_promote.py` → `active_version_id` flip.
 
@@ -193,15 +196,18 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
 
 - **2026-06-30** — Training platform **Google Colab → RunPod**. Base model **Nemotron-Nano-30B (unchanged)**.
   (GLM 5.2 wala plan socha tha, phir cancel — base model same rakha, sirf platform RunPod kiya.)
-- **2026-06-30** — **Saira Harvest** engine repo mein integrate kiya (`omni_training/harvest/`, 18 files,
-  `.pytest_cache` chhod ke) — Omni ke liye scale par training-data harvesting tool (section 4.5 + Step 0.5).
+- **2026-06-30** — **Saira Harvest** engine repo mein integrate kiya (`sarva_training/harvest/`, 18 files,
+  `.pytest_cache` chhod ke) — Sarva ke liye scale par training-data harvesting tool (section 4.5 + Step 0.5).
   `aiosqlite` + `PyYAML` main requirements mein merge.
-- **2026-06-30** — **RunPod training kit** banaya (`deploy/runpod/`): `train_omni.py` + `setup.sh` +
-  `README_RUNPOD.md`. Ab Omni training pod par `git clone` + 4 commands se chalti hai (Colab ke bajaye).
-- **2026-07-05** — Paper **v2 → v4** re-sync. Omni ab Conductor+Executor+Learner. `saira_harvest_1` ka
-  Phase-1 Omni logic (confidence + refine) `neuralrouter/omni_brain/` mein port; refine ab RLEF R_exec feed karta hai.
+- **2026-06-30** — **RunPod training kit** banaya (`deploy/runpod/`): `train_sarva.py` + `setup.sh` +
+  `README_RUNPOD.md`. Ab Sarva training pod par `git clone` + 4 commands se chalti hai (Colab ke bajaye).
+- **2026-07-05** — Paper **v2 → v4** re-sync. Sarva ab Conductor+Executor+Learner. `saira_harvest_1` ka
+  Phase-1 Sarva logic (confidence + refine) `neuralrouter/sarva_brain/` mein port; refine ab RLEF R_exec feed karta hai.
   v4 ke naye sections (Security §5, Failure Modes §12, Enterprise §13, Future of Work §14, Moat §15) abhi 🔴 pending.
 - **2026-07-05** — External-tool regression se `tools.py`+`chat_service.py` recover kiye (HEAD se restore).
+- **2026-07-05** — Paper **v4 → v6** ("v5.0"). Conductor ka naam **Sarva → Sarva** (paper mein; code abhi "Sarva").
+  Naye: §2 Related Work, §8.3 Objective Stability, §13 Implementation Status (prototype + harvest, 29 tests).
+  Honest reframe: koi trained model nahi, sab hypotheses. **Pending decision:** code mein Sarva→Sarva rename karna ya nahi.
 
 ---
 

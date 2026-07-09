@@ -7,7 +7,7 @@ Production scaffold for Railway, Render, or any Docker host. For India-focused S
 1. Copy `.env.production.example` → platform secrets (never commit `.env`)
 2. Provider keys: `OPENROUTER_API_KEY`, `MOONSHOT_API_KEY`, `DEEPINFRA_API_KEY` (at least one routing path)
 3. PostgreSQL + Redis URLs
-4. Vault keys: `OMNI_VAULT_HMAC_KEY`, `OMNI_VAULT_ENCRYPTION_KEY`, `OMNI_ADMIN_KEY`
+4. Vault keys: `SARVA_VAULT_HMAC_KEY`, `SARVA_VAULT_ENCRYPTION_KEY`, `SARVA_ADMIN_KEY`
 
 ## Related docs
 
@@ -34,7 +34,7 @@ Production scaffold for Railway, Render, or any Docker host. For India-focused S
 
 - Choose **AWS ap-south-1 (Mumbai)** or **GCP asia-south1** for DB when available
 - Keep inference provider keys global; latency is dominated by expert API round-trips
-- Document data residency in customer agreements; vault encryption at rest via `OMNI_VAULT_ENCRYPTION_KEY`
+- Document data residency in customer agreements; vault encryption at rest via `SARVA_VAULT_ENCRYPTION_KEY`
 - Stripe India: enable INR prices; set `STRIPE_PRICE_PRO` to India price ID
 
 ## Clerk (auth)
@@ -64,11 +64,11 @@ Extended response includes `version`, `brain`, and `search` status.
 python scripts/verify_setup.py
 ```
 
-## Omni brain promote (production)
+## Sarva brain promote (production)
 
 ```powershell
-python omni_training/brain_eval.py omni-v2
-python omni_training/brain_promote.py omni-v2 --approve
+python sarva_training/brain_eval.py sarva-v2
+python sarva_training/brain_promote.py sarva-v2 --approve
 ```
 
-Or admin API with `X-Omni-Admin-Key`.
+Or admin API with `X-Sarva-Admin-Key`.

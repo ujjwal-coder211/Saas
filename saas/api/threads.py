@@ -1,4 +1,4 @@
-"""Omni Memory — per-user chat threads API (Routely persistent memory)."""
+"""Sarva Memory — per-user chat threads API (Routely persistent memory)."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class AppendMessageRequest(BaseModel):
 
 def _require_user(auth: AuthContext) -> str:
     if not saas_db_enabled():
-        raise HTTPException(503, "DATABASE_URL required for Omni Memory threads")
+        raise HTTPException(503, "DATABASE_URL required for Sarva Memory threads")
     if not auth.user_id:
         raise HTTPException(401, "Sign up and use a SaaS API key for persistent memory")
     return auth.user_id
@@ -148,7 +148,7 @@ async def append_message(
 
 
 def load_thread_history(thread_id: str, user_id: str, limit: int = 20) -> list[dict]:
-    """Load recent messages for Omni context injection."""
+    """Load recent messages for Sarva context injection."""
     with db_session() as session:
         _verify_thread(session, thread_id, user_id)
         rows = session.execute(

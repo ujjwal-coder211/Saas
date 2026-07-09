@@ -5,7 +5,7 @@ Endpoints:
   POST /v1/chat              — simple JSON for web/mobile apps
   POST /v1/chat/completions  — OpenAI-compatible (Cursor, Codex, Continue)
   GET  /v1/models            — OpenAI-compatible model list
-  POST /v1/feedback          — user feedback → Omni Training Program
+  POST /v1/feedback          — user feedback → Sarva Training Program
   GET  /health               — health check (no auth)
   POST /public/chat          — website demo + sales widget (rate-limited, no Bearer)
   /saas/v1/*                 — billing, usage, API keys (see saas/api/routes.py)
@@ -48,7 +48,7 @@ from saas.rate_limit import rate_limit
 from neuralrouter.router import REGISTRY, manual_expert
 from neuralrouter.concurrency import ConcurrencyGuard, active_users_summary
 from neuralrouter.load_balancer import balancer
-from neuralrouter.omni_brain.loader import active_brain_summary
+from neuralrouter.sarva_brain.loader import active_brain_summary
 from neuralrouter.search import search_status
 from saas.billing.usage import QuotaExceededError, check_quota, record_usage
 from saas.billing.stripe_webhooks import handle_webhook
@@ -64,8 +64,8 @@ from neuralrouter.work_modes import WorkMode
 from neuralrouter.parity.router import router as parity_router
 
 sys.path.insert(0, str(ROOT_DIR))
-from omni_training.logger import log_interaction, record_feedback  # noqa: E402
-from omni_training.vault import verify_admin_key, vault_stats  # noqa: E402
+from sarva_training.logger import log_interaction, record_feedback  # noqa: E402
+from sarva_training.vault import verify_admin_key, vault_stats  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("neuralrouter")
@@ -78,7 +78,7 @@ if CORS_ORIGINS:
         allow_origins=CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Omni-Admin-Key", "Stripe-Signature", "X-Agents-Key"],
+        allow_headers=["Authorization", "Content-Type", "X-Sarva-Admin-Key", "Stripe-Signature", "X-Agents-Key"],
     )
 
 app.include_router(saas_router)
@@ -128,7 +128,7 @@ class ChatResponse(BaseModel):
     confidence: float
     tokens_used: Optional[int] = None
     web_search_used: bool = False
-    omni_controller: Optional[dict] = None
+    sarva_controller: Optional[dict] = None
 
 
 class OpenAIMessage(BaseModel):
@@ -180,9 +180,9 @@ def _messages_to_query(messages: list[OpenAIMessage]) -> str:
 def _resolve_force_model(model: str) -> Optional[str]:
     if model in (
         "auto",
-        "omni",
+        "sarva",
         "routely",
-        "aksh-omni",
+        "aksh-sarva",
         "neuralrouter-auto",
         "default",
         "gpt-4",
@@ -456,7 +456,7 @@ async def chat(
         confidence=result.confidence,
         tokens_used=result.tokens,
         web_search_used=result.web_search_used,
-        omni_controller=result.omni_plan,
+        sarva_controller=result.sarva_plan,
     )
 
 
@@ -538,7 +538,7 @@ async def chat_completions(
             "completion_tokens": result.completion_tokens or 0,
             "total_tokens": result.tokens or 0,
         },
-        "system_fingerprint": f"aksh-omni-{result.omni_plan.get('brain_version_id') if result.omni_plan else 'v0'}",
+        "system_fingerprint": f"aksh-sarva-{result.sarva_plan.get('brain_version_id') if result.sarva_plan else 'v0'}",
     }
 
 
@@ -566,14 +566,14 @@ async def list_models(
     return {"object": "list", "data": data}
 
 
-@app.get("/v1/omni/brain")
-async def omni_brain_public(
+@app.get("/v1/sarva/brain")
+async def sarva_brain_public(
     request: Request,
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
-    """Read-only active Omni brain info for authenticated users."""
+    """Read-only active Sarva brain info for authenticated users."""
     rate_limit(request, auth)
-    from omni_training.brain_registry import load_registry
+    from sarva_training.brain_registry import load_registry
 
     reg = load_registry()
     active = active_brain_summary()
@@ -600,7 +600,7 @@ async def agent_run(
     if not provider_configured():
         raise HTTPException(
             503,
-            "Omni Agent needs OPENROUTER_API_KEY (or other provider keys) in .env",
+            "Sarva Agent needs OPENROUTER_API_KEY (or other provider keys) in .env",
         )
 
     project_root: Path | None = None
@@ -628,7 +628,7 @@ async def agent_run(
         result = await call_model(
             text,
             "qwen",
-            system_prompt="You are Aksh Agent powered by Omni. Follow work mode scope strictly.",
+            system_prompt="You are Aksh Agent powered by Sarva. Follow work mode scope strictly.",
         )
         return result.get("content", "")
 
@@ -709,17 +709,17 @@ async def stripe_webhook_endpoint(request: Request):
     return result
 
 
-@app.get("/admin/omni/brain")
-async def admin_omni_brain(
+@app.get("/admin/sarva/brain")
+async def admin_sarva_brain(
     request: Request,
     auth: Annotated[AuthContext, Depends(verify_auth)],
-    x_omni_admin_key: Annotated[str | None, Header()] = None,
+    x_sarva_admin_key: Annotated[str | None, Header()] = None,
 ):
-    """List Omni brain versions — active, candidates, archived."""
+    """List Sarva brain versions — active, candidates, archived."""
     rate_limit(request, auth)
-    if not verify_admin_key(x_omni_admin_key):
-        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
-    from omni_training.brain_registry import get_active_brain, list_versions, load_registry
+    if not verify_admin_key(x_sarva_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Sarva-Admin-Key")
+    from sarva_training.brain_registry import get_active_brain, list_versions, load_registry
 
     reg = load_registry()
     return {
@@ -735,18 +735,18 @@ class PromoteBrainRequest(BaseModel):
     force: bool = False
 
 
-@app.post("/admin/omni/brain/promote")
+@app.post("/admin/sarva/brain/promote")
 async def admin_promote_brain(
     request: Request,
     body: PromoteBrainRequest,
     auth: Annotated[AuthContext, Depends(verify_auth)],
-    x_omni_admin_key: Annotated[str | None, Header()] = None,
+    x_sarva_admin_key: Annotated[str | None, Header()] = None,
 ):
-    """Hot-replace active Omni main brain with trained candidate."""
+    """Hot-replace active Sarva main brain with trained candidate."""
     rate_limit(request, auth)
-    if not verify_admin_key(x_omni_admin_key):
-        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
-    from omni_training.brain_registry import promote, update_metrics
+    if not verify_admin_key(x_sarva_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Sarva-Admin-Key")
+    from sarva_training.brain_registry import promote, update_metrics
 
     try:
         if body.approve:
@@ -757,15 +757,15 @@ async def admin_promote_brain(
     return result
 
 
-@app.get("/admin/omni/stats")
-async def admin_omni_stats(
+@app.get("/admin/sarva/stats")
+async def admin_sarva_stats(
     request: Request,
     auth: Annotated[AuthContext, Depends(verify_auth)],
-    x_omni_admin_key: Annotated[str | None, Header()] = None,
+    x_sarva_admin_key: Annotated[str | None, Header()] = None,
 ):
     rate_limit(request, auth)
-    if not verify_admin_key(x_omni_admin_key):
-        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
+    if not verify_admin_key(x_sarva_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Sarva-Admin-Key")
     return vault_stats()
 
 
@@ -773,11 +773,11 @@ async def admin_omni_stats(
 async def admin_system_status(
     request: Request,
     auth: Annotated[AuthContext, Depends(verify_auth)],
-    x_omni_admin_key: Annotated[str | None, Header()] = None,
+    x_sarva_admin_key: Annotated[str | None, Header()] = None,
 ):
     rate_limit(request, auth)
-    if not verify_admin_key(x_omni_admin_key):
-        raise HTTPException(403, "Invalid or missing X-Omni-Admin-Key")
+    if not verify_admin_key(x_sarva_admin_key):
+        raise HTTPException(403, "Invalid or missing X-Sarva-Admin-Key")
     return {
         "load": active_users_summary(),
         "provider_circuits": balancer.status(),

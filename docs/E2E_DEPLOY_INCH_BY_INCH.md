@@ -10,7 +10,7 @@
 
 | Item | Status |
 |------|--------|
-| Aksh API + Studio + Omni | Code on `main` |
+| Aksh API + Studio + Sarva | Code on `main` |
 | Docker image build | `Dockerfile` |
 | Production stack | `docker-compose.prod.yml` (Postgres + Redis + API) |
 | Entry script | `scripts/docker-entrypoint.sh` (wait DB + start) |
@@ -90,9 +90,9 @@ nano .env
 | `SAAS_ALLOW_PUBLIC_SIGNUP` | `true` (launch) | allow signup |
 | `SAAS_PUBLIC_URL` | `https://api.aksh.aitotech.in` | your API domain |
 | `NEURALROUTER_CORS_ORIGINS` | `https://api.aksh.aitotech.in,https://aitotech.in` | your domains |
-| `OMNI_VAULT_HMAC_KEY` | random hex | `openssl rand -hex 32` |
-| `OMNI_VAULT_ENCRYPTION_KEY` | random hex | `openssl rand -hex 32` |
-| `OMNI_ADMIN_KEY` | random string | you invent (admin brain promote) |
+| `SARVA_VAULT_HMAC_KEY` | random hex | `openssl rand -hex 32` |
+| `SARVA_VAULT_ENCRYPTION_KEY` | random hex | `openssl rand -hex 32` |
+| `SARVA_ADMIN_KEY` | random string | you invent (admin brain promote) |
 
 Optional but good:
 
@@ -237,7 +237,7 @@ To link Studio from website, add button URL:
 
 `https://api.aksh.aitotech.in/web/studio/`
 
-**Cursor users:** Base URL `https://api.aksh.aitotech.in/v1`, model `omni`
+**Cursor users:** Base URL `https://api.aksh.aitotech.in/v1`, model `sarva`
 
 ---
 
@@ -283,7 +283,7 @@ docker compose -f docker-compose.prod.yml down
 | Vercel redeploy (website) | Your Vercel dashboard |
 | Supabase waitlist keys | Your Supabase project |
 | Stripe keys | Your Stripe account |
-| TIR GPU (Omni inference) | E2E GPU console — optional phase 2 |
+| TIR GPU (Sarva inference) | E2E GPU console — optional phase 2 |
 
 ---
 

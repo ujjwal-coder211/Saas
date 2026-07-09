@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-OMNI_TRAINING_DIR = ROOT_DIR / "omni_training"
-REGISTRY_DIR = OMNI_TRAINING_DIR / "models_registry"
+SARVA_TRAINING_DIR = ROOT_DIR / "sarva_training"
+REGISTRY_DIR = SARVA_TRAINING_DIR / "models_registry"
 
 # API provider keys (never commit real values)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -36,10 +36,10 @@ RATE_LIMIT_PER_MINUTE = int(os.environ.get("NEURALROUTER_RATE_LIMIT", "60"))
 MAX_CONCURRENT_PER_CLIENT = int(os.environ.get("NEURALROUTER_MAX_CONCURRENT_PER_CLIENT", "5"))
 MAX_GLOBAL_CONCURRENT = int(os.environ.get("NEURALROUTER_MAX_GLOBAL_CONCURRENT", "50"))
 
-# Omni vault security (training data — separate from client API keys)
-OMNI_VAULT_HMAC_KEY = os.environ.get("OMNI_VAULT_HMAC_KEY", "")
-OMNI_VAULT_ENCRYPTION_KEY = os.environ.get("OMNI_VAULT_ENCRYPTION_KEY", "")
-OMNI_ADMIN_KEY = os.environ.get("OMNI_ADMIN_KEY", "")
+# Sarva vault security (training data — separate from client API keys)
+SARVA_VAULT_HMAC_KEY = os.environ.get("SARVA_VAULT_HMAC_KEY", "")
+SARVA_VAULT_ENCRYPTION_KEY = os.environ.get("SARVA_VAULT_ENCRYPTION_KEY", "")
+SARVA_ADMIN_KEY = os.environ.get("SARVA_ADMIN_KEY", "")
 
 # CORS — comma-separated origins; empty = no browser CORS (API clients only)
 CORS_ORIGINS = [

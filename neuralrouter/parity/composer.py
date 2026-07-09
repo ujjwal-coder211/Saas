@@ -45,7 +45,7 @@ async def run_composer(
             continue
 
     plan_prompt = (
-        "You are Omni Composer for Aksh. Plan a multi-file change.\n"
+        "You are Sarva Composer for Aksh. Plan a multi-file change.\n"
         f"Task: {task}\n"
         f"Rules: {rules or '(none)'}\n"
         f"Project files: {', '.join(paths) or '(empty)'}\n\n"
@@ -56,7 +56,7 @@ async def run_composer(
     if file_summaries:
         plan_prompt += "\n\nExisting code:\n" + "\n\n".join(file_summaries)
 
-    raw = await call_model(plan_prompt, "qwen", system_prompt="You are Aksh Composer powered by Omni.")
+    raw = await call_model(plan_prompt, "qwen", system_prompt="You are Aksh Composer powered by Sarva.")
     content = raw.get("content") or ""
     changed: list[str] = []
 

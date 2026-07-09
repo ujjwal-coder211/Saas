@@ -122,7 +122,7 @@ PUBLIC_DEMO_RATE_LIMIT=20
 NEURALROUTER_RATE_LIMIT=60
 ```
 
-Add when ready: `CLERK_*`, `STRIPE_*`, `OMNI_VAULT_*`, `AKSH_SEARCH_*`.
+Add when ready: `CLERK_*`, `STRIPE_*`, `SARVA_VAULT_*`, `AKSH_SEARCH_*`.
 
 ### Vercel — browser project (`apps/browser`)
 

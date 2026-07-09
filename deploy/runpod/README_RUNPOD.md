@@ -1,8 +1,8 @@
-# Omni Conductor — RunPod Training (step by step)
+# Sarva Conductor — RunPod Training (step by step)
 
-Ye guide tumhare RunPod account (already logged in, ~$148 credit) par Omni ka
+Ye guide tumhare RunPod account (already logged in, ~$148 credit) par Sarva ka
 conductor brain train karne ke liye hai. **Base model:** `nvidia/Nemotron-3-Nano-30B-A3B`.
-**Data:** repo mein already committed (`omni_training/data/export/conductor_v1_train.jsonl`, 2154 rows).
+**Data:** repo mein already committed (`sarva_training/data/export/conductor_v1_train.jsonl`, 2154 rows).
 
 Jo main (AI) bana chuka hoon: training script + setup + ye guide + dataset — sab repo mein.
 Jo tumhe karna hai: RunPod console par pod deploy + 4 commands. Neeche exactly wahi hai.
@@ -56,13 +56,13 @@ bash deploy/runpod/setup.sh
 
 ```bash
 export HF_TOKEN="hf_xxxxxxxxxxxxxxxxx"      # Step 0 wala write token
-python deploy/runpod/train_omni.py
+python deploy/runpod/train_sarva.py
 ```
 
 Bas. Script khud sab karega:
 - Nemotron-30B 4-bit load
 - 2154 rows par QLoRA train (3 epochs)
-- adapter save + HuggingFace par push → **`Ujjwal211/aitotech-omni-v2`**
+- adapter save + HuggingFace par push → **`Ujjwal211/aitotech-sarva-v2`**
 
 **Time:** A40 par roughly 2–4 ghante. Terminal band mat karo (ya `nohup ... &` / `tmux` use karo taaki
 disconnect hone par bhi chale — optional).
@@ -70,9 +70,9 @@ disconnect hone par bhi chale — optional).
 ### Tuning (optional env, run se pehle export karo)
 ```bash
 export EPOCHS=3            # aur data hua to 2 kar sakte ho
-export ADAPTER_REPO="Ujjwal211/aitotech-omni-v2"
-export DATA_PATH="omni_training/data/export/conductor_bootstrap_train.jsonl"   # tez test (500 rows)
-export RESUME_ADAPTER="Ujjwal211/aitotech-omni-v1"   # purane adapter se continue karna ho to
+export ADAPTER_REPO="Ujjwal211/aitotech-sarva-v2"
+export DATA_PATH="sarva_training/data/export/conductor_bootstrap_train.jsonl"   # tez test (500 rows)
+export RESUME_ADAPTER="Ujjwal211/aitotech-sarva-v1"   # purane adapter se continue karna ho to
 ```
 
 **Pehli baar test karna ho** to `conductor_bootstrap_train.jsonl` (500 rows) se chalao — ~30–45 min mein
@@ -93,16 +93,16 @@ Training ho gaya to adapter HuggingFace par hai. Ab local repo mein register kar
 
 ```powershell
 cd C:\Users\ujjwa\Saas
-python omni_training/brain_register.py omni-v2 lora_hf `
-  --label "Omni Conductor v2" `
-  --adapter-repo Ujjwal211/aitotech-omni-v2 `
+python sarva_training/brain_register.py sarva-v2 lora_hf `
+  --label "Sarva Conductor v2" `
+  --adapter-repo Ujjwal211/aitotech-sarva-v2 `
   --base-model nvidia/Nemotron-3-Nano-30B-A3B
-python omni_training/brain_eval.py omni-v2
+python sarva_training/brain_eval.py sarva-v2
 ```
 
 Eval theek lage tabhi promote karo (`active_version_id` flip):
 ```powershell
-python omni_training/brain_promote.py omni-v2 --approve
+python sarva_training/brain_promote.py sarva-v2 --approve
 ```
 
 ---
@@ -111,8 +111,8 @@ python omni_training/brain_promote.py omni-v2 --approve
 
 Trained brain ko *actually* routing badalne ke liye ek inference endpoint chahiye:
 1. RunPod par ek serving pod (vLLM/TGI) chalao jo base + adapter serve kare, ek `/plan` endpoint de.
-2. Apne app mein env set karo: `OMNI_INFERENCE_URL=https://<runpod-endpoint>`.
-3. Code side ka **Step 2 gap** (loader ka `omni_native_plan_hint` ko routing override banana) —
+2. Apne app mein env set karo: `SARVA_INFERENCE_URL=https://<runpod-endpoint>`.
+3. Code side ka **Step 2 gap** (loader ka `sarva_native_plan_hint` ko routing override banana) —
    ye abhi bhi pending hai (dekho `AI_CONTEXT.md` section 4). Bolo to main wo code likh dun.
 
 ---
@@ -124,7 +124,7 @@ Trained brain ko *actually* routing badalne ke liye ek inference endpoint chahiy
 cd /workspace && git clone https://github.com/ujjwal-coder211/Saas.git && cd Saas
 bash deploy/runpod/setup.sh
 export HF_TOKEN="hf_xxx"
-python deploy/runpod/train_omni.py
+python deploy/runpod/train_sarva.py
 # -> phir pod STOP/TERMINATE
 ```
 
