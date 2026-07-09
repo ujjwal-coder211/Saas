@@ -174,20 +174,11 @@ def synthesize(query: str, drafts: list[str]) -> str:
 
 
 def create_app():
-    from fastapi import FastAPI
-    from pydantic import BaseModel, Field
+    # Read the raw JSON body instead of binding a Pydantic model. This is robust
+    # across the fastapi/pydantic/starlette version skew seen on RunPod base images.
+    from fastapi import FastAPI, Request
 
     app = FastAPI(title="Sarva Conductor Inference", version="1.0.0")
-
-    class PlanRequest(BaseModel):
-        query: str
-        brain_version: str | None = None
-        artifact: dict | None = None
-        mode: str | None = "controller_plan"
-
-    class SynthRequest(BaseModel):
-        query: str
-        drafts: list[str] = Field(default_factory=list)
 
     @app.get("/health")
     def health():
@@ -199,18 +190,27 @@ def create_app():
         }
 
     @app.post("/plan")
-    def plan(req: PlanRequest):
-        plan_obj = plan_query(req.query)
+    async def plan(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        query = (body or {}).get("query", "")
+        plan_obj = plan_query(query)
         return {
             "plan": plan_obj,
             "controller_context": plan_obj.get("reason"),
             "hint": plan_obj.get("reason"),
-            "brain_version": req.brain_version,
+            "brain_version": (body or {}).get("brain_version"),
         }
 
     @app.post("/synthesize")
-    def synth(req: SynthRequest):
-        text = synthesize(req.query, req.drafts)
+    async def synth(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        text = synthesize((body or {}).get("query", ""), (body or {}).get("drafts") or [])
         return {"content": text, "answer": text}
 
     return app
