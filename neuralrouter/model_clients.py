@@ -92,7 +92,8 @@ async def call_model(
         raise ValueError(f"unknown model_id: {model_id}")
 
     if retry > MAX_RETRIES:
-        raise RuntimeError(f"Model {model_id} failed after {MAX_RETRIES} retries")
+        last = globals().get("_LAST_MODEL_ERROR", "unknown")
+        raise RuntimeError(f"Model {model_id} failed after {MAX_RETRIES} retries: {last}")
 
     if retry == 0:
         _ensure_provider_key(model_id)
@@ -140,8 +141,9 @@ async def call_model(
         fallback = "qwen" if model_id != "qwen" else "mistral"
         logger.warning("Timeout on %s, fallback to %s", model_id, fallback)
         return await call_model(query, fallback, system_prompt, retry + 1)
-    except Exception:
+    except Exception as exc:
         balancer.record_failure(_provider_key(model_id))
+        globals()["_LAST_MODEL_ERROR"] = f"{type(exc).__name__}: {str(exc)[:200]}"
         logger.exception("API error model=%s retry=%s", model_id, retry)
         if retry >= MAX_RETRIES:
             raise

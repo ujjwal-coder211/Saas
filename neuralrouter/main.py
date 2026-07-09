@@ -400,7 +400,7 @@ async def public_chat(
         logger.exception("public_chat failed")
         raise HTTPException(
             503,
-            detail=f"Routely is temporarily unavailable. Check OpenRouter API key. ({type(exc).__name__})",
+            detail=f"Routely temporarily unavailable ({type(exc).__name__}): {str(exc)[:300]}",
         ) from exc
 
     agent_label = "Routely" if body.agent_type.lower() in ("aksh", "routely") else "AitoTech AI"
