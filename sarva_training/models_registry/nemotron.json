@@ -2,17 +2,52 @@
   "model_id": "nemotron",
   "display_name": "DeepSeek R1 distill (free)",
   "provider": "OpenRouter",
-  "api_model_string": "deepseek/deepseek-r1-distill-qwen-32b:free",
+  "api_model_string": "nvidia/nemotron-3-nano-30b-a3b:free",
   "architecture_family": "Dense",
   "total_params_b": 32,
   "active_params_b": 32,
   "context_window": 32768,
   "max_tokens": 4096,
-  "specialty_domains": ["hard bugs", "tests", "algorithms"],
+  "specialty_domains": [
+    "hard bugs",
+    "tests",
+    "algorithms"
+  ],
   "sub_experts": [
-    {"id": "test-expert", "name": "Tests", "keywords": ["test", "unit test", "pytest", "jest", "coverage", "spec"]},
-    {"id": "logic-expert", "name": "Algorithms", "keywords": ["algorithm", "optimize", "performance", "complexity", "o(n)"]},
-    {"id": "trace-expert", "name": "Deep Debug", "keywords": ["trace", "root cause", "stack trace", "segfault", "race condition"]}
+    {
+      "id": "test-expert",
+      "name": "Tests",
+      "keywords": [
+        "test",
+        "unit test",
+        "pytest",
+        "jest",
+        "coverage",
+        "spec"
+      ]
+    },
+    {
+      "id": "logic-expert",
+      "name": "Algorithms",
+      "keywords": [
+        "algorithm",
+        "optimize",
+        "performance",
+        "complexity",
+        "o(n)"
+      ]
+    },
+    {
+      "id": "trace-expert",
+      "name": "Deep Debug",
+      "keywords": [
+        "trace",
+        "root cause",
+        "stack trace",
+        "segfault",
+        "race condition"
+      ]
+    }
   ],
   "response_style": {
     "typical_format": "step-by-step reasoning then fix",

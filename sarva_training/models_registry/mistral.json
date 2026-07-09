@@ -2,17 +2,57 @@
   "model_id": "mistral",
   "display_name": "Mistral Small (free)",
   "provider": "OpenRouter",
-  "api_model_string": "mistralai/mistral-small-3.1-24b-instruct:free",
+  "api_model_string": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
   "architecture_family": "Dense",
   "total_params_b": 24,
   "active_params_b": 24,
   "context_window": 128000,
   "max_tokens": 4096,
-  "specialty_domains": ["python", "frontend", "debugging"],
+  "specialty_domains": [
+    "python",
+    "frontend",
+    "debugging"
+  ],
   "sub_experts": [
-    {"id": "python-expert", "name": "Python/Backend", "keywords": ["python", "django", "fastapi", "flask", "backend", "sql"]},
-    {"id": "frontend-expert", "name": "Frontend/React", "keywords": ["react", "next", "html", "css", "javascript", "typescript", "frontend", "ui"]},
-    {"id": "debug-expert", "name": "Debugging", "keywords": ["debug", "error", "bug", "fix", "not working", "crash", "exception"]}
+    {
+      "id": "python-expert",
+      "name": "Python/Backend",
+      "keywords": [
+        "python",
+        "django",
+        "fastapi",
+        "flask",
+        "backend",
+        "sql"
+      ]
+    },
+    {
+      "id": "frontend-expert",
+      "name": "Frontend/React",
+      "keywords": [
+        "react",
+        "next",
+        "html",
+        "css",
+        "javascript",
+        "typescript",
+        "frontend",
+        "ui"
+      ]
+    },
+    {
+      "id": "debug-expert",
+      "name": "Debugging",
+      "keywords": [
+        "debug",
+        "error",
+        "bug",
+        "fix",
+        "not working",
+        "crash",
+        "exception"
+      ]
+    }
   ],
   "response_style": {
     "typical_format": "code blocks with brief explanation",

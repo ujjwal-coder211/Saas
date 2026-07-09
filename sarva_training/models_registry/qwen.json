@@ -2,17 +2,53 @@
   "model_id": "qwen",
   "display_name": "Qwen Coder (free)",
   "provider": "OpenRouter",
-  "api_model_string": "qwen/qwen-2.5-coder-32b-instruct:free",
+  "api_model_string": "qwen/qwen3-coder:free",
   "architecture_family": "Dense",
   "total_params_b": 32,
   "active_params_b": 32,
   "context_window": 32768,
   "max_tokens": 4096,
-  "specialty_domains": ["general coding", "scripts", "explain code"],
+  "specialty_domains": [
+    "general coding",
+    "scripts",
+    "explain code"
+  ],
   "sub_experts": [
-    {"id": "coding-expert", "name": "General Coding", "keywords": ["code", "write", "build", "implement", "function", "api", "endpoint"]},
-    {"id": "hindi-expert", "name": "Hindi/Hinglish", "keywords": ["hindi", "hinglish", "हिंदी", "बताओ", "समझाओ", "कैसे"]},
-    {"id": "general-expert", "name": "Explain", "keywords": ["explain", "what is", "how does", "describe"]}
+    {
+      "id": "coding-expert",
+      "name": "General Coding",
+      "keywords": [
+        "code",
+        "write",
+        "build",
+        "implement",
+        "function",
+        "api",
+        "endpoint"
+      ]
+    },
+    {
+      "id": "hindi-expert",
+      "name": "Hindi/Hinglish",
+      "keywords": [
+        "hindi",
+        "hinglish",
+        "हिंदी",
+        "बताओ",
+        "समझाओ",
+        "कैसे"
+      ]
+    },
+    {
+      "id": "general-expert",
+      "name": "Explain",
+      "keywords": [
+        "explain",
+        "what is",
+        "how does",
+        "describe"
+      ]
+    }
   ],
   "response_style": {
     "typical_format": "code blocks with brief explanation",

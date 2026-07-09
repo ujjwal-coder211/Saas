@@ -2,17 +2,49 @@
   "model_id": "glm",
   "display_name": "Gemma 3 (free)",
   "provider": "OpenRouter",
-  "api_model_string": "google/gemma-3-27b-it:free",
+  "api_model_string": "google/gemma-4-31b-it:free",
   "architecture_family": "Dense",
   "total_params_b": 27,
   "active_params_b": 27,
   "context_window": 128000,
   "max_tokens": 4096,
-  "specialty_domains": ["refactoring", "codebase-wide changes"],
+  "specialty_domains": [
+    "refactoring",
+    "codebase-wide changes"
+  ],
   "sub_experts": [
-    {"id": "repo-expert", "name": "Codebase-wide", "keywords": ["codebase", "repository", "entire project", "whole repo", "all files"]},
-    {"id": "refactor-expert", "name": "Refactoring", "keywords": ["refactor", "rename", "restructure", "clean up", "architecture"]},
-    {"id": "review-expert", "name": "Code Review", "keywords": ["review", "improve", "best practice", "lint"]}
+    {
+      "id": "repo-expert",
+      "name": "Codebase-wide",
+      "keywords": [
+        "codebase",
+        "repository",
+        "entire project",
+        "whole repo",
+        "all files"
+      ]
+    },
+    {
+      "id": "refactor-expert",
+      "name": "Refactoring",
+      "keywords": [
+        "refactor",
+        "rename",
+        "restructure",
+        "clean up",
+        "architecture"
+      ]
+    },
+    {
+      "id": "review-expert",
+      "name": "Code Review",
+      "keywords": [
+        "review",
+        "improve",
+        "best practice",
+        "lint"
+      ]
+    }
   ],
   "response_style": {
     "typical_format": "multi-file aware edits",
