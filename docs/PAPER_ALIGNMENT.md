@@ -51,8 +51,8 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 
 | Item | State | Where |
 |---|---|---|
-| Multi-model synthesis (collaborative merge) | 🟡 | `chat_service._run_with_plan` (merge); Q-scored defer/vote/escalate not |
-| DAG decomposition of complex requests | 🔴 | future work |
+| Q-scored synthesis (defer/vote/merge/escalate) | ✅ | `sarva_brain/synthesis.py` |
+| DAG decomposition of complex requests | ✅ | `sarva_brain/dag.py` (heuristic split + parallel layers) |
 
 ## §8 Self-Evolution via RLEF
 
