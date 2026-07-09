@@ -32,7 +32,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 MOCK = os.environ.get("SARVA_INFERENCE_MOCK", "").strip() in ("1", "true", "yes")
-BASE_MODEL = os.environ.get("BASE_MODEL", "nvidia/Nemotron-3-Nano-30B-A3B").strip()
+BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-14B-Instruct-bnb-4bit").strip()
 ADAPTER_REPO = os.environ.get("ADAPTER_REPO", "Ujjwal211/aitotech-sarva-v2").strip()
 ADAPTER_PATH = os.environ.get("ADAPTER_PATH", "").strip()
 HOST = os.environ.get("HOST", "0.0.0.0").strip()
@@ -173,56 +173,68 @@ def synthesize(query: str, drafts: list[str]) -> str:
     )
 
 
-def create_app():
-    # Read the raw JSON body instead of binding a Pydantic model. This is robust
-    # across the fastapi/pydantic/starlette version skew seen on RunPod base images.
-    from fastapi import FastAPI, Request
+# --- HTTP server: Python stdlib only (no fastapi/uvicorn/pydantic/starlette) ---
+# RunPod base images ship an incompatible fastapi/starlette combo that 422s on
+# every request. http.server has zero third-party deps and cannot version-skew.
 
-    app = FastAPI(title="Sarva Conductor Inference", version="1.0.0")
+def _handle(path: str, body: dict) -> tuple[int, dict]:
+    if path == "/health":
+        return 200, {"ok": True, "mock": MOCK, "base_model": BASE_MODEL,
+                     "adapter": ADAPTER_PATH or ADAPTER_REPO}
+    if path == "/plan":
+        plan_obj = plan_query(str(body.get("query", "")))
+        return 200, {"plan": plan_obj, "controller_context": plan_obj.get("reason"),
+                     "hint": plan_obj.get("reason"), "brain_version": body.get("brain_version")}
+    if path == "/synthesize":
+        text = synthesize(str(body.get("query", "")), body.get("drafts") or [])
+        return 200, {"content": text, "answer": text}
+    return 404, {"error": "not found", "paths": ["/health", "/plan", "/synthesize"]}
 
-    @app.get("/health")
-    def health():
-        return {
-            "ok": True,
-            "mock": MOCK,
-            "base_model": BASE_MODEL,
-            "adapter": ADAPTER_PATH or ADAPTER_REPO,
-        }
 
-    @app.post("/plan")
-    async def plan(request: Request):
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
-        query = (body or {}).get("query", "")
-        plan_obj = plan_query(query)
-        return {
-            "plan": plan_obj,
-            "controller_context": plan_obj.get("reason"),
-            "hint": plan_obj.get("reason"),
-            "brain_version": (body or {}).get("brain_version"),
-        }
+def _make_handler():
+    from http.server import BaseHTTPRequestHandler
 
-    @app.post("/synthesize")
-    async def synth(request: Request):
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
-        text = synthesize((body or {}).get("query", ""), (body or {}).get("drafts") or [])
-        return {"content": text, "answer": text}
+    class Handler(BaseHTTPRequestHandler):
+        def _send(self, code: int, payload: dict) -> None:
+            data = json.dumps(payload).encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
-    return app
+        def do_GET(self):  # noqa: N802
+            code, payload = _handle(self.path.split("?")[0], {})
+            self._send(code, payload)
+
+        def do_POST(self):  # noqa: N802
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                raw = self.rfile.read(length) if length else b"{}"
+                body = json.loads(raw.decode("utf-8") or "{}")
+                if not isinstance(body, dict):
+                    body = {}
+            except Exception:
+                body = {}
+            try:
+                code, payload = _handle(self.path.split("?")[0], body)
+            except Exception as exc:  # never 500 the caller into a bad state
+                code, payload = 200, {"error": f"handler_error: {exc}", "plan": None}
+            self._send(code, payload)
+
+        def log_message(self, fmt, *args):  # quieter logs
+            print("[serve]", self.address_string(), fmt % args)
+
+    return Handler
 
 
 def main() -> int:
-    import uvicorn
+    from http.server import ThreadingHTTPServer
 
     print("=" * 60)
-    print("Sarva inference server")
+    print("Sarva inference server (stdlib http.server)")
     print(f"  mock={MOCK} host={HOST} port={PORT}")
-    print(f"  adapter={ADAPTER_PATH or ADAPTER_REPO}")
+    print(f"  base={BASE_MODEL}  adapter={ADAPTER_PATH or ADAPTER_REPO}")
     print("=" * 60)
     if not MOCK:
         try:
@@ -231,7 +243,12 @@ def main() -> int:
             print(f"GPU load failed: {exc}", file=sys.stderr)
             print("Hint: set SARVA_INFERENCE_MOCK=1 for wiring tests without GPU.", file=sys.stderr)
             return 2
-    uvicorn.run(create_app(), host=HOST, port=PORT, log_level="info")
+    server = ThreadingHTTPServer((HOST, PORT), _make_handler())
+    print(f"Listening on http://{HOST}:{PORT}  (POST /plan, /synthesize; GET /health)")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        server.shutdown()
     return 0
 
 
