@@ -9,6 +9,7 @@ __pycache__/
 sarva_training/data/*.jsonl
 sarva_training/data/vault/
 sarva_training/data/rlef/
+sarva_training/data/audit/
 !sarva_training/data/.gitkeep
 
 .DS_Store

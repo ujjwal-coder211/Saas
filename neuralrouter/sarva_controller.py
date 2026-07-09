@@ -142,6 +142,9 @@ def plan_turn(
         CAPABILITY_BOUND,
     ]
     directives.extend(scope.system_directives)
+    from neuralrouter.security.injection import firewall_directive
+
+    directives.append(firewall_directive())  # paper §6.3 untrusted-content rule
     brain_meta = active_brain_summary()
     directives.extend(brain_directives_for_plan())
     brain_id = brain_meta.get("version_id", "sarva-rules-v0")
@@ -199,7 +202,9 @@ def plan_turn(
 
 
 def apply_search_context(plan: SarvaPlan, result: SearchResult) -> SarvaPlan:
-    ctx = result.as_context_block()
+    from neuralrouter.security.injection import wrap_untrusted
+
+    ctx = wrap_untrusted(result.as_context_block(), source="web_search")
     return SarvaPlan(
         query=plan.query,
         experts=plan.experts,

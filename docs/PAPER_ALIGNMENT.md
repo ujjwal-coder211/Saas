@@ -42,10 +42,10 @@ _Status as of 2026-07-09. Test suite: 23 passing (`neuralrouter/tests`, `sarva_t
 | Item | State | Where |
 |---|---|---|
 | Permission gate in the loop (decide → **check** → execute) | ✅ | `security/permissions.py` (`check_plan`), wired in `agent_loop.py` |
-| Risk-tiered permissions (auto/confirm/explicit) | 🟡 | heuristic tiers in `permissions.py`; adaptive promotion not |
-| Credential vault (OS keychain, never in prompt) | 🔴 | designed; not implemented |
-| Prompt-injection firewall (untrusted = data, auto-escalate) | 🔴 | designed; not implemented |
-| Append-only audit trail | 🟡 | RLEF ledger logs decisions; full audit log not |
+| Risk-tiered permissions (auto/confirm/explicit) | 🟡 | tiers in `permissions.py`; adaptive trust-promotion not |
+| Credential vault (OS keychain, never in prompt) | ✅ | `security/vault.py` (keyring / Fernet file / redact) |
+| Prompt-injection firewall (untrusted = data, auto-escalate) | ✅ | `security/injection.py`, wired in gate + controller |
+| Append-only audit trail | ✅ | `security/audit.py` (every permission decision, redacted) |
 
 ## §7 Task Decomposition & Synthesis
 

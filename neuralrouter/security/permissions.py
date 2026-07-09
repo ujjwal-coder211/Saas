@@ -92,8 +92,48 @@ def check_plan(
     allow_write: bool = True,
     allow_deploy: bool = False,
     work_mode: str = "ship",
+    from_untrusted: bool = False,
 ) -> Approval:
-    """Gate one Harness tool call. Call before run_tool()."""
+    """Gate one Harness tool call. Call before run_tool().
+
+    ``from_untrusted``: set when this action's proximate cause is untrusted
+    (fetched/tool) content — the risk tier is escalated and, if that reaches
+    ``blocked``, the action is denied (paper §6.3 structural escalation).
+    """
+    approval = _evaluate(
+        tool, args, allow_write=allow_write, allow_deploy=allow_deploy, work_mode=work_mode
+    )
+    return _finalize(approval, from_untrusted=from_untrusted)
+
+
+def _finalize(approval: Approval, *, from_untrusted: bool) -> Approval:
+    from neuralrouter.security import audit as _audit
+    from neuralrouter.security.injection import escalate_risk
+
+    if from_untrusted and approval.approved:
+        approval.risk = escalate_risk(approval.risk, from_untrusted=True)
+        approval.audit = {**approval.audit, "from_untrusted": True}
+        if approval.risk == "blocked":
+            approval.approved = False
+            approval.reason = "escalated_untrusted_content_blocked"
+    _audit.record(
+        "permission",
+        tool=approval.tool,
+        decision="approved" if approval.approved else "denied",
+        risk=approval.risk,
+        detail={**approval.audit, "reason": approval.reason},
+    )
+    return approval
+
+
+def _evaluate(
+    tool: str,
+    args: dict[str, Any] | None = None,
+    *,
+    allow_write: bool = True,
+    allow_deploy: bool = False,
+    work_mode: str = "ship",
+) -> Approval:
     args = args or {}
     audit = {"tool": tool, "work_mode": work_mode, "allow_write": allow_write}
 
