@@ -8,9 +8,12 @@ python --version
 pip --version
 
 echo "==> Installing training deps (Unsloth + TRL + PEFT stack)"
-pip install -q "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
-pip install -q --no-deps trl peft accelerate bitsandbytes datasets
-pip install -q huggingface_hub
+# RunPod base images use an externally-managed Python (PEP 668); allow system installs.
+export PIP_BREAK_SYSTEM_PACKAGES=1
+PIP="pip install --break-system-packages -q"
+$PIP "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+$PIP --no-deps trl peft accelerate bitsandbytes datasets
+$PIP huggingface_hub
 
 echo "==> GPU check"
 python - <<'PY'

@@ -208,6 +208,10 @@ bade paimane par query karke SFT / synthesis datasets aur routing labels banata 
   Phase-1 Sarva logic (confidence + refine) `neuralrouter/sarva_brain/` mein port; refine ab RLEF R_exec feed karta hai.
   v4 ke naye sections (Security §5, Failure Modes §12, Enterprise §13, Future of Work §14, Moat §15) abhi 🔴 pending.
 - **2026-07-05** — External-tool regression se `tools.py`+`chat_service.py` recover kiye (HEAD se restore).
+- **2026-07-09** — LIVE RunPod training (A40, SSH-driven). Findings: (1) RunPod Python PEP 668 —
+  setup.sh ko `--break-system-packages` chahiye (fixed). (2) Paper ka `nvidia/Nemotron-3-Nano-30B-A3B`
+  ek `nemotron_h` hybrid Mamba+MoE hai jise **Unsloth support nahi karta** — QLoRA ke liye default base
+  ab `unsloth/Qwen2.5-14B-Instruct-bnb-4bit` (train_sarva.py). Nemotron-30B baad mein non-Unsloth pipeline se.
 - **2026-07-05** — Paper **v4 → v6** ("v5.0"). Conductor ka naam **Sarva → Sarva** (paper mein; code abhi "Sarva").
   Naye: §2 Related Work, §8.3 Objective Stability, §13 Implementation Status (prototype + harvest, 29 tests).
   Honest reframe: koi trained model nahi, sab hypotheses. **Pending decision:** code mein Sarva→Sarva rename karna ya nahi.

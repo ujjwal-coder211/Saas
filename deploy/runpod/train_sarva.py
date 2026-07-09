@@ -41,7 +41,11 @@ def main() -> int:
         print("ERROR: HF_TOKEN env var is required (HuggingFace write token).", file=sys.stderr)
         return 2
 
-    base_model = _env("BASE_MODEL", "nvidia/Nemotron-3-Nano-30B-A3B")
+    # NOTE: the paper's Nemotron-3-Nano-30B-A3B is a `nemotron_h` hybrid Mamba+MoE
+    # architecture that Unsloth does NOT support (and needs a 60GB download). For a
+    # working QLoRA conductor we default to an Unsloth-supported instruct model.
+    # Override with BASE_MODEL=... for anything else.
+    base_model = _env("BASE_MODEL", "unsloth/Qwen2.5-14B-Instruct-bnb-4bit")
     _master = "sarva_training/data/export/sarva_master_train.jsonl"
     _v1 = "sarva_training/data/export/conductor_v1_train.jsonl"
     _default_data = _master if os.path.exists(_master) else _v1
