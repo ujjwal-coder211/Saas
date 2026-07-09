@@ -39,6 +39,7 @@ from neuralrouter.config import (
     APP_VERSION,
     CORS_ORIGINS,
     MAX_MESSAGE_CHARS,
+    OPENROUTER_API_KEY,
     PUBLIC_DEMO_ENABLED,
     PUBLIC_DEMO_RATE_LIMIT,
     ROOT_DIR,
@@ -310,6 +311,8 @@ async def health():
         "model": "Routely",
         "saas_db": saas_db_enabled(),
         "models_loaded": list(REGISTRY.keys()),
+        "model_strings": {k: v.get("api_model_string") for k, v in REGISTRY.items()},
+        "openrouter_key_set": bool(OPENROUTER_API_KEY),
         "brain": {
             "active_version_id": brain.get("version_id"),
             "label": brain.get("label"),
