@@ -301,6 +301,8 @@ async def _execute_chat(
 
 @app.get("/health")
 async def health():
+    from neuralrouter.model_clients import providers_status as _providers_status
+
     brain = active_brain_summary()
     search = search_status()
     return {
@@ -313,6 +315,7 @@ async def health():
         "models_loaded": list(REGISTRY.keys()),
         "model_strings": {k: v.get("api_model_string") for k, v in REGISTRY.items()},
         "openrouter_key_set": bool(OPENROUTER_API_KEY),
+        "providers": _providers_status(),
         "brain": {
             "active_version_id": brain.get("version_id"),
             "label": brain.get("label"),

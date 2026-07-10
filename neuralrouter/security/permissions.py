@@ -53,6 +53,40 @@ WRITE_TOOLS = frozenset(
 
 DEPLOY_TOOLS = frozenset({"generate_deploy_kit"})
 
+# Sensitive targets — reading or writing these is credential theft / excessive
+# agency (paper §6.1) regardless of work mode. Blocked outright, not escalated.
+_SENSITIVE_PATH = re.compile(
+    r"("
+    r"\.ssh[/\\]|authorized_keys|id_rsa|id_ed25519|id_dsa"
+    r"|\.aws[/\\]credentials|\.git-credentials|\.netrc|\.npmrc"
+    r"|/etc/passwd|/etc/shadow|/etc/sudoers"
+    r"|\.pem\b|\.p12\b|\.pfx\b|\.keystore\b"
+    r"|-----BEGIN[^-]*PRIVATE KEY-----"
+    r"|\.env\b"
+    r")",
+    re.IGNORECASE,
+)
+# ...but .env.example / .sample / .template are safe to touch.
+_SENSITIVE_ALLOW = re.compile(r"\.env[.\-_](example|sample|template|dist)", re.IGNORECASE)
+# Hard credential markers that no *.example exception can rescue.
+_HARD_SENSITIVE = re.compile(
+    r"(\.ssh|authorized_keys|id_rsa|id_ed25519|credentials|/etc/(passwd|shadow|sudoers)"
+    r"|\.pem\b|\.p12\b|private key|\.netrc)",
+    re.IGNORECASE,
+)
+
+
+def _targets_sensitive(args: dict[str, Any]) -> bool:
+    """True when a tool's arguments reference a credential / system-secret path."""
+    blob = " ".join(str(v) for v in (args or {}).values())
+    if not blob or not _SENSITIVE_PATH.search(blob):
+        return False
+    # Allow only when the sole hit is an .env.example-style file.
+    if _SENSITIVE_ALLOW.search(blob) and not _HARD_SENSITIVE.search(blob):
+        return False
+    return True
+
+
 # Shell patterns that must never auto-run (paper §6 excessive agency).
 _DESTRUCTIVE_SHELL = re.compile(
     r"("
@@ -151,6 +185,17 @@ def _evaluate(
 ) -> Approval:
     args = args or {}
     audit = {"tool": tool, "work_mode": work_mode, "allow_write": allow_write}
+
+    # Sensitive-path guard (paper §6.1 credential theft / excessive agency):
+    # blocked for BOTH read and write tools, ahead of the read auto-approve.
+    if _targets_sensitive(args):
+        return Approval(
+            approved=False,
+            reason="sensitive_path_blocked",
+            tool=tool,
+            risk="blocked",
+            audit={**audit, "target": " ".join(str(v) for v in args.values())[:200]},
+        )
 
     if tool not in READ_TOOLS and tool not in WRITE_TOOLS:
         return Approval(

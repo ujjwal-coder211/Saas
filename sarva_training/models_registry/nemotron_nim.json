@@ -1,0 +1,35 @@
+{
+  "model_id": "nemotron-nim",
+  "display_name": "Nemotron 70B (NVIDIA NIM, first-party host)",
+  "provider": "NVIDIA NIM",
+  "api_model_string": "nvidia/llama-3.1-nemotron-70b-instruct",
+  "architecture_family": "Dense",
+  "total_params_b": 70,
+  "active_params_b": 70,
+  "context_window": 32768,
+  "max_tokens": 4096,
+  "specialty_domains": [
+    "first-party host",
+    "reasoning",
+    "escalation"
+  ],
+  "sub_experts": [
+    {
+      "id": "nim-reasoning-expert",
+      "name": "NIM Reasoning",
+      "keywords": [
+        "nemotron",
+        "first party",
+        "on-prem",
+        "sovereign",
+        "air-gapped"
+      ]
+    }
+  ],
+  "response_style": {
+    "typical_format": "structured reasoning then answer",
+    "avg_temperature_used": 0.3,
+    "tends_to": "deliberate, cite steps"
+  },
+  "notes": "Routely — first-party host slot served via NVIDIA NIM (OpenAI-compatible). Only routable when NVIDIA_NIM_API_KEY is set; validated per-provider at call time (paper §13)."
+}

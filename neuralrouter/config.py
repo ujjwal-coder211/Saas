@@ -14,6 +14,13 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 MOONSHOT_API_KEY = os.environ.get("MOONSHOT_API_KEY", "")
 DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY", "")
 
+# First-party host (paper §13): NVIDIA NIM speaks the OpenAI-compatible interface.
+# Aggregator (OpenRouter) + first-party host (NIM) is the multi-provider claim.
+NVIDIA_NIM_API_KEY = os.environ.get("NVIDIA_NIM_API_KEY", "")
+NVIDIA_NIM_BASE_URL = os.environ.get(
+    "NVIDIA_NIM_BASE_URL", "https://integrate.api.nvidia.com/v1"
+)
+
 # Your product API keys — comma-separated for multiple clients
 _raw_keys = os.environ.get("NEURALROUTER_API_KEYS", "")
 NEURALROUTER_API_KEYS: set[str] = {
