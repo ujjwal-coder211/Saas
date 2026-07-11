@@ -26,13 +26,28 @@ Product plan: [docs/ROUTELY.md](docs/ROUTELY.md)
 
 ## Quick start
 
-```powershell
-copy .env.example .env
-# Set OPENROUTER_API_KEY (free models use :free suffix in registry)
+**Full guide: [GETTING_STARTED.md](GETTING_STARTED.md)** — clone → configure → run → use, in ~5 min.
+
+```bash
+cp .env.example .env          # set OPENROUTER_API_KEY (free key at openrouter.ai/keys)
+
+# Local:
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn neuralrouter.main:app --port 8000
+
+# ...or Docker:
 docker compose up --build
 ```
 
+Verify in one command (no key needed):
+
+```bash
+python scripts/smoke_local.py     # -> RESULT: READY ✅
+```
+
 - API health: http://localhost:8000/health
+- OpenAI-compatible endpoint: `POST /v1/chat/completions` (model `sarva`) — works with Cursor/Continue
 - Legacy Studio: http://localhost:8000/web/studio/
 - **Browser app (dev):** `cd apps/browser && npm install && npm run dev`
 
