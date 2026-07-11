@@ -1,0 +1,69 @@
+Saira / Sarva by Aitotech
+Copyright (c) 2026 Aitotech. All Rights Reserved. (see LICENSE)
+
+This product incorporates or depends on third-party components. Each is governed
+by its own license; you MUST verify commercial-use permissions for your use case.
+This NOTICE is for attribution and does not grant any rights.
+
+================================================================================
+BASE MODEL (fine-tuned conductor)
+================================================================================
+- Qwen2.5-14B-Instruct — Alibaba Cloud (Qwen). Served via Unsloth 4-bit
+  (unsloth/Qwen2.5-14B-Instruct-bnb-4bit). Governed by the Qwen license.
+  Adapters: Ujjwal211/aitotech-sarva-v2 / -v3 / -v4 (LoRA on the above).
+
+================================================================================
+TRAINING DATA (real-corpora conductor, sarva-v4)
+================================================================================
+- Magicoder-OSS-Instruct-75K — ise-uiuc (code_generation)
+- SWE-bench / SWE-bench_Lite — princeton-nlp (debugging)
+- CodeFeedback-Filtered-Instruction — m-a-p (code_review)
+  Verify each dataset's license permits commercial model training/serving.
+
+================================================================================
+OPEN-WEIGHT TEACHER MODELS (referenced for delegation/distillation, §4.4)
+================================================================================
+- Qwen (Alibaba), DeepSeek, GLM (Z.ai), Kimi (Moonshot AI), Mistral,
+  Nemotron (NVIDIA). Distillation restricted to open-weight, permissively
+  licensed models only. Closed commercial APIs are escalation targets only and
+  are never distillation sources.
+
+================================================================================
+MODEL ROUTING / SERVING PROVIDERS
+================================================================================
+- OpenRouter (aggregator) — routing to :free and paid models
+- NVIDIA NIM (integrate.api.nvidia.com) — first-party host (optional)
+- Hugging Face Hub — model/adapter hosting and download
+  Subject to each provider's terms of service, including commercial-use terms.
+
+================================================================================
+FINE-TUNING / ML STACK
+================================================================================
+- Unsloth, PEFT, TRL, Transformers, Datasets, Accelerate, bitsandbytes
+  (Hugging Face and contributors) · PyTorch
+- aiosqlite, PyYAML (offline harvest tooling)
+
+================================================================================
+APPLICATION / RUNTIME LIBRARIES
+================================================================================
+- FastAPI, Starlette, Uvicorn, Pydantic
+- OpenAI Python SDK, httpx
+- SQLAlchemy, psycopg2 (PostgreSQL), redis
+- Stripe (billing), cryptography, python-dotenv, python-multipart
+
+================================================================================
+SPEECH (optional voice pipeline)
+================================================================================
+- Whisper (OpenAI) large-v3 or a hosted STT service, per configuration.
+
+================================================================================
+RESEARCH REFERENCES
+================================================================================
+The Saira technical report cites prior work including Mixture-of-Agents,
+RouteLLM, FrugalGPT, AutoGen, ReAct, Toolformer, STaR, LoRA/QLoRA, PPO,
+Model Context Protocol, the OWASP LLM Top 10, Whisper, and SWE-bench. See the
+report's References section for full citations.
+
+--------------------------------------------------------------------------------
+If you distribute or serve this product commercially, review each component's
+license and each provider's terms, and consult a qualified professional.
