@@ -110,7 +110,10 @@ async def sarva_native_plan_trace(query: str) -> RoutingDecisionTrace | None:
         "mode": "controller_plan",
     }
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        # Fail fast: a stopped/unreachable inference endpoint must not add latency
+        # to every request — fall back to the hybrid rules brain quickly.
+        timeout = httpx.Timeout(6.0, connect=3.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             r = await client.post(f"{url.rstrip('/')}/plan", json=payload)
             r.raise_for_status()
             data = r.json()

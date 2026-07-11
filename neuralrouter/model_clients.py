@@ -172,6 +172,12 @@ async def call_model(
 
         if len(content.strip()) < 10:
             balancer.record_failure(_provider_key(model_id))
+            globals()["_LAST_MODEL_ERROR"] = (
+                f"EmptyOrShortResponse from {model_id} "
+                f"({REGISTRY[model_id].get('api_model_string')}) — "
+                "the provider returned no usable content (often a rate-limited or "
+                "data-policy-gated free model)."
+            )
             fallback = "qwen" if model_id != "qwen" else "mistral"
             logger.warning("Short response from %s, fallback to %s", model_id, fallback)
             return await call_model(query, fallback, system_prompt, retry + 1)
@@ -187,6 +193,11 @@ async def call_model(
 
     except asyncio.TimeoutError:
         balancer.record_failure(_provider_key(model_id))
+        globals()["_LAST_MODEL_ERROR"] = (
+            f"Timeout after {REQUEST_TIMEOUT_SECONDS}s on {model_id} "
+            f"({REGISTRY[model_id].get('api_model_string')}) — provider too slow "
+            "(often an overloaded free model)."
+        )
         fallback = "qwen" if model_id != "qwen" else "mistral"
         logger.warning("Timeout on %s, fallback to %s", model_id, fallback)
         return await call_model(query, fallback, system_prompt, retry + 1)
