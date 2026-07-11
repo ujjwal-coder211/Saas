@@ -1,0 +1,51 @@
+{
+  "schema": "sarva-conductor-1.0",
+  "paper": "Saira v5.0 / v6.1",
+  "scale": 0.0016,
+  "seed": 42,
+  "files": [
+    {
+      "stage": 1,
+      "path": "stage1_coding.seed.jsonl",
+      "rows": 800,
+      "composition": {
+        "code_generation": 320,
+        "debugging": 192,
+        "code_review": 128,
+        "refactoring": 96,
+        "architecture": 64
+      }
+    },
+    {
+      "stage": 2,
+      "path": "stage2_tooluse.seed.jsonl",
+      "rows": 560,
+      "composition": {
+        "file_ops": 128,
+        "browser_automation": 112,
+        "shell_system": 96,
+        "multi_tool": 128,
+        "voice_to_action": 64,
+        "error_recovery": 32
+      }
+    },
+    {
+      "stage": 3,
+      "path": "stage3_routing.seed.jsonl",
+      "rows": 80,
+      "composition": {
+        "routing": 80
+      }
+    },
+    {
+      "stage": 4,
+      "path": "stage4_rlef.seed.jsonl",
+      "rows": 1000,
+      "composition": {
+        "rlef": 1000,
+        "kept_for_ppo(|R|>0.3)": 839
+      }
+    }
+  ],
+  "total_rows": 2440
+}

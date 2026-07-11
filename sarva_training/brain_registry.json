@@ -1,6 +1,6 @@
 {
   "active_version_id": "sarva-v2",
-  "updated_at": "2026-07-09T18:19:01.080871+00:00",
+  "updated_at": "2026-07-11T09:43:43.108863+00:00",
   "versions": {
     "sarva-rules-v0": {
       "id": "sarva-rules-v0",
@@ -33,6 +33,32 @@
       "trained_at": "2026-07-09T00:00:00+00:00",
       "created_at": "2026-07-09T00:00:00+00:00",
       "promoted_at": "2026-07-09T18:19:01.080866+00:00"
+    },
+    "sarva-v3": {
+      "id": "sarva-v3",
+      "label": "Sarva Conductor v3 (Qwen2.5-14B QLoRA, §10 seed curriculum)",
+      "type": "lora_hf",
+      "status": "candidate",
+      "description": "Trained on RunPod A40 (459 steps, 3 epochs, §10 4-stage seed = 2440 rows). Validates the full GPU pipeline end-to-end; template payloads => NOT a quality upgrade over v2. Real corpora via convert_public.py pending. Not promoted; v2 stays active.",
+      "artifact": {
+        "base_model": "unsloth/Qwen2.5-14B-Instruct-bnb-4bit",
+        "adapter_repo": "Ujjwal211/aitotech-sarva-v3",
+        "train_platform": "runpod-a40",
+        "data_primary": "sarva_training/data/export/saira_conductor_seed_v1_train.jsonl",
+        "curriculum": "all(1-4)",
+        "rows": 2440,
+        "epochs": 3,
+        "steps": 459,
+        "lora_rank": 32
+      },
+      "metrics": {
+        "train_loss_final": 0.115,
+        "eval_score": null,
+        "manual_approved": false,
+        "note": "SMOKE-TEST on template/placeholder seed payloads"
+      },
+      "trained_at": "2026-07-11T09:43:43.108814+00:00",
+      "created_at": "2026-07-11T09:43:43.108856+00:00"
     }
   }
 }

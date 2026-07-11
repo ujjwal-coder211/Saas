@@ -11,6 +11,8 @@ from neuralrouter.config import (
     DEEPINFRA_API_KEY,
     MAX_RETRIES,
     MOONSHOT_API_KEY,
+    NVIDIA_NIM_API_KEY,
+    NVIDIA_NIM_BASE_URL,
     OPENROUTER_API_KEY,
     REQUEST_TIMEOUT_SECONDS,
 )
@@ -50,6 +52,11 @@ def _deepinfra() -> AsyncOpenAI:
     )
 
 
+def _nim() -> AsyncOpenAI:
+    """First-party host (paper §13). NVIDIA NIM, OpenAI-compatible endpoint."""
+    return _get_client("nvidia_nim", NVIDIA_NIM_API_KEY, NVIDIA_NIM_BASE_URL)
+
+
 PROVIDER_CLIENTS = {
     "OpenRouter / DeepInfra": _openrouter,
     "OpenRouter": _openrouter,
@@ -57,6 +64,22 @@ PROVIDER_CLIENTS = {
     "Z.ai / OpenRouter": _openrouter,
     "Alibaba / DeepInfra": _deepinfra,
     "Moonshot AI / OpenRouter": _moonshot,
+    "NVIDIA NIM": _nim,
+    "NVIDIA": _nim,
+}
+
+# Which env key backs each provider — used for per-provider startup validation
+# so a NIM-served model checks the NIM key, not OpenRouter's (paper §13:
+# "per-provider authentication resolved exclusively from environment variables").
+PROVIDER_KEYS = {
+    "OpenRouter / DeepInfra": lambda: OPENROUTER_API_KEY,
+    "OpenRouter": lambda: OPENROUTER_API_KEY,
+    "Mistral AI / OpenRouter": lambda: OPENROUTER_API_KEY,
+    "Z.ai / OpenRouter": lambda: OPENROUTER_API_KEY,
+    "Alibaba / DeepInfra": lambda: DEEPINFRA_API_KEY,
+    "Moonshot AI / OpenRouter": lambda: MOONSHOT_API_KEY,
+    "NVIDIA NIM": lambda: NVIDIA_NIM_API_KEY,
+    "NVIDIA": lambda: NVIDIA_NIM_API_KEY,
 }
 
 
@@ -74,8 +97,34 @@ def _client_for(model_id: str) -> tuple[AsyncOpenAI, dict]:
 
 
 def _ensure_provider_key(model_id: str) -> None:
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY not set in environment")
+    """Validate the env key for THIS model's provider (not always OpenRouter)."""
+    provider = REGISTRY[model_id].get("provider", "OpenRouter")
+    key_getter = PROVIDER_KEYS.get(provider)
+    if key_getter is None:
+        # Unknown provider defaults to OpenRouter (the aggregator).
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError("OPENROUTER_API_KEY not set in environment")
+        return
+    if not key_getter():
+        env_name = {
+            _openrouter: "OPENROUTER_API_KEY",
+            _deepinfra: "DEEPINFRA_API_KEY",
+            _moonshot: "MOONSHOT_API_KEY",
+            _nim: "NVIDIA_NIM_API_KEY",
+        }.get(PROVIDER_CLIENTS.get(provider, _openrouter), "OPENROUTER_API_KEY")
+        raise RuntimeError(
+            f"{env_name} not set in environment (required for provider '{provider}')"
+        )
+
+
+def providers_status() -> dict[str, bool]:
+    """Which providers have a key configured — for /health and startup checks."""
+    return {
+        "openrouter": bool(OPENROUTER_API_KEY),
+        "nvidia_nim": bool(NVIDIA_NIM_API_KEY),
+        "moonshot": bool(MOONSHOT_API_KEY),
+        "deepinfra": bool(DEEPINFRA_API_KEY),
+    }
 
 
 def _provider_key(model_id: str) -> str:

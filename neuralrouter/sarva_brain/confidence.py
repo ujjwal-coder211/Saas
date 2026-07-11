@@ -48,17 +48,37 @@ def _lexical_score(query: str) -> float:
     return max(0.0, min(1.0, score))
 
 
-def self_assess(query: str, task_type: str = "general", historical: float | None = None) -> float:
+def self_assess(
+    query: str,
+    task_type: str = "general",
+    historical: float | None = None,
+    *,
+    use_trained_head: bool = True,
+) -> float:
     """Confidence in [0,1] that Sarva can answer this well on its own.
 
-    ``historical`` is an optional observed self-handle success rate for this
-    task_type (0..1), e.g. from the RLEF ledger. When present it is blended in
-    and weighted more heavily than the lexical guess.
+    Preference order (paper §4.3):
+      1. a *trained* confidence head, when an artifact exists (data-driven);
+      2. otherwise the lexical heuristic below.
+    ``historical`` (observed self-handle success rate from the RLEF ledger) is
+    blended in either way so the estimate keeps shifting as data accumulates.
     """
-    lexical = _lexical_score(query)
+    base = None
+    if use_trained_head:
+        try:
+            from neuralrouter.sarva_brain.confidence_head import load_head
+
+            head = load_head()
+            if head is not None:
+                base = head.predict(query, task_type)
+        except Exception:
+            base = None
+    if base is None:
+        base = _lexical_score(query)  # heuristic fallback
+
     if historical is None:
-        return round(lexical, 4)
-    return round(0.4 * lexical + 0.6 * historical, 4)
+        return round(base, 4)
+    return round(0.4 * base + 0.6 * historical, 4)
 
 
 def threshold_for(task_type: str) -> float:
