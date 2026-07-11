@@ -1,6 +1,6 @@
 {
   "active_version_id": "sarva-v2",
-  "updated_at": "2026-07-11T09:43:43.108863+00:00",
+  "updated_at": "2026-07-11T13:22:36.184378+00:00",
   "versions": {
     "sarva-rules-v0": {
       "id": "sarva-rules-v0",
@@ -59,6 +59,37 @@
       },
       "trained_at": "2026-07-11T09:43:43.108814+00:00",
       "created_at": "2026-07-11T09:43:43.108856+00:00"
+    },
+    "sarva-v4": {
+      "id": "sarva-v4",
+      "label": "Sarva Conductor v4 (Qwen2.5-14B QLoRA, REAL corpora)",
+      "type": "lora_hf",
+      "status": "candidate",
+      "description": "Trained on RunPod A100-80GB (764 steps, 2 epochs, 6100 rows = 4300 REAL coding records from Magicoder-OSS-Instruct + SWE-bench + CodeFeedback, mixed with structural seed). First non-template conductor. Candidate — needs eval before promotion; v2 stays active.",
+      "artifact": {
+        "base_model": "unsloth/Qwen2.5-14B-Instruct-bnb-4bit",
+        "adapter_repo": "Ujjwal211/aitotech-sarva-v4",
+        "train_platform": "runpod-a100-80gb",
+        "data_primary": "sarva_training/data/export/saira_conductor_real_v1_train.jsonl",
+        "rows": 6100,
+        "real_rows": 4300,
+        "epochs": 2,
+        "steps": 764,
+        "lora_rank": 32,
+        "real_sources": [
+          "Magicoder-OSS-Instruct-75K(code_generation)",
+          "SWE-bench_Lite(debugging)",
+          "CodeFeedback(code_review)"
+        ]
+      },
+      "metrics": {
+        "train_loss": 0.3165,
+        "eval_score": null,
+        "manual_approved": false,
+        "note": "REAL-corpora SFT (not template) — genuine quality vs v3"
+      },
+      "trained_at": "2026-07-11T13:22:36.184338+00:00",
+      "created_at": "2026-07-11T13:22:36.184370+00:00"
     }
   }
 }
