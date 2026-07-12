@@ -192,7 +192,7 @@
     rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;q.value=(micBase?micBase+' ':'')+t;q.dispatchEvent(new Event('input'));};
     rec.onend=()=>{listening=false;mic.classList.remove('rec');};rec.onerror=()=>{listening=false;mic.classList.remove('rec');};
     try{rec.start();listening=true;mic.classList.add('rec');q.focus();}catch(e){listening=false;mic.classList.remove('rec');}}
-  mic.onclick=()=>listening?stopMic():startMic(); if(!SR)mic.style.display='none';
+  mic.onclick=()=>listening?stopMic():startMic(); if(!SR){mic.title='Voice input needs Chrome or Edge';mic.style.opacity='.55';}
 
   send.onclick=()=>ask(q.value);
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(q.value);}});

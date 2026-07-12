@@ -226,7 +226,7 @@
   send.onclick=()=>ask(q.value);
   q.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(q.value);} });
   q.addEventListener('input',()=>{ q.style.height='auto'; q.style.height=Math.min(q.scrollHeight,160)+'px'; });
-  if(!SR) mic.style.display='none';   // hide mic where unsupported
+  if(!SR){ mic.title='Voice input needs Chrome or Edge'; mic.style.opacity='.55'; }
   q.focus();
 </script>
 </body>
