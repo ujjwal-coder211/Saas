@@ -1,562 +1,199 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Routely Studio | Aitotech</title>
-  <style>
-    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
-    header { padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-    header h1 { margin:0; font-size:16px; }
-    header a { color:var(--accent); text-decoration:none; font-size:13px; }
-    .pill { font-size:11px; color:var(--ok); border:1px solid var(--ok); padding:2px 8px; border-radius:999px; }
-    .layout { flex:1; display:grid; grid-template-columns:200px 220px 1fr 300px; min-height:0; }
-    .threads, .sidebar, .chat-panel { border-right:1px solid var(--border); background:var(--panel); overflow:auto; }
-    .chat-panel { border-right:none; border-left:1px solid var(--border); display:flex; flex-direction:column; }
-    .threads, .sidebar { padding:10px; font-size:13px; }
-    .threads h3, .sidebar h3 { margin:0 0 8px; font-size:11px; color:var(--muted); text-transform:uppercase; }
-    button, select, input, textarea { font:inherit; }
-    button { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:8px 10px; cursor:pointer; font-weight:600; font-size:12px; }
-    button.secondary { background:#21262d; color:var(--text); border:1px solid var(--border); }
-    .thread-item { padding:6px 8px; border-radius:6px; cursor:pointer; margin-bottom:4px; border:1px solid transparent; }
-    .thread-item:hover, .thread-item.active { background:#21262d; border-color:var(--border); }
-    .file-tree { list-style:none; padding:0; margin:0; }
-    .file-tree li { padding:4px 6px; border-radius:4px; cursor:pointer; }
-    .file-tree li:hover, .file-tree li.active { background:#21262d; }
-    #editor { min-height:0; }
-    .editor-wrap { display:flex; flex-direction:column; min-height:0; }
-    .tabs { display:flex; gap:4px; margin-bottom:8px; }
-    .tabs button { flex:1; }
-    .tab-active { outline:2px solid var(--accent); }
-    .chat-log { flex:1; overflow:auto; padding:10px; font-size:13px; }
-    .chat-msg { margin-bottom:8px; padding:8px; border-radius:8px; background:#0d1117; border:1px solid var(--border); white-space:pre-wrap; }
-    .chat-input { padding:10px; border-top:1px solid var(--border); }
-    .chat-input textarea { width:100%; min-height:64px; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px; resize:vertical; margin-bottom:8px; }
-    label { font-size:11px; color:var(--muted); display:block; margin-bottom:4px; }
-    .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
-    .row input, .row select { flex:1; min-width:80px; padding:6px; border-radius:6px; border:1px solid var(--border); background:#0d1117; color:var(--text); font-size:12px; }
-    @media (max-width:1100px) { .layout { grid-template-columns: 1fr 1fr; } .threads { display:none; } }
-    #inlineModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; align-items:center; justify-content:center; }
-    #inlineModal.open { display:flex; }
-    #inlineModal .box { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; width:min(520px,92vw); }
-    #inlineModal textarea { width:100%; min-height:60px; margin:8px 0; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px; }
-    #termDrawer { border-top:1px solid var(--border); background:#0d1117; max-height:160px; overflow:auto; font-family:monospace; font-size:12px; padding:8px; display:none; }
-    #termDrawer.open { display:block; }
-    #termInput { width:100%; background:#161b22; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px; font-family:monospace; font-size:12px; }
-    .git-out { font-size:11px; color:var(--muted); white-space:pre-wrap; max-height:100px; overflow:auto; margin-top:6px; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sarva Studio — by Aitotech</title>
+<style>
+  :root{
+    --bg:#0a0c12; --panel:#0e111b; --panel-2:#141826; --border:#222840;
+    --text:#e8ecf5; --muted:#8b93ad; --accent:#4f7cff; --accent-2:#7a5cff; --sarva:#161b2b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+  /* sidebar */
+  aside{width:260px;flex:0 0 260px;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;padding:6px 6px 16px}
+  .brand .mark{width:28px;height:28px;border-radius:8px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;font-size:15px}
+  .brand small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+  .newbtn{display:flex;align-items:center;gap:8px;justify-content:center;padding:11px;border-radius:11px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:14px;font-weight:600}
+  .newbtn:hover{border-color:var(--accent)}
+  .side-h{color:var(--muted);font-size:11px;letter-spacing:.6px;text-transform:uppercase;margin:20px 6px 8px}
+  .threads{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+  .thread{padding:9px 10px;border-radius:9px;color:var(--muted);font-size:14px;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thread:hover,.thread.active{background:var(--panel-2);color:var(--text)}
+  aside nav{border-top:1px solid var(--border);padding-top:12px;margin-top:8px;display:flex;flex-direction:column;gap:2px}
+  aside nav a{color:var(--muted);font-size:14px;padding:7px 10px;border-radius:8px}
+  aside nav a:hover{background:var(--panel-2);color:var(--text)}
+  /* main */
+  main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--border)}
+  .modes{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:4px}
+  .modes button{background:transparent;border:none;color:var(--muted);padding:6px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600}
+  .modes button.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+  .chip-search{color:var(--muted);font-size:13px}
+  #stream{flex:1;overflow-y:auto;padding:24px 22px}
+  .center{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
+  .center .logo{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;font-size:28px;margin-bottom:8px}
+  .center h1{font-size:26px;font-weight:700}
+  .center p{color:var(--muted);max-width:460px}
+  .cards{display:grid;grid-template-columns:repeat(2,minmax(0,240px));gap:12px;margin-top:22px}
+  .actcard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;cursor:pointer}
+  .actcard:hover{border-color:var(--accent)}
+  .actcard .ic{font-size:20px;margin-bottom:8px}
+  .actcard b{font-size:14px}
+  .actcard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+  .msg{display:flex;gap:12px;max-width:820px;margin:0 auto 18px;animation:rise .25s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg .av{width:30px;height:30px;border-radius:9px;flex:0 0 30px;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .msg.user{flex-direction:row-reverse}
+  .msg.user .av{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  .msg.user .bubble{background:#2a55e6;border-bottom-right-radius:4px;white-space:pre-wrap}
+  .msg.sarva .av{background:var(--panel-2);border:1px solid var(--border)}
+  .msg.sarva .bubble{background:var(--sarva);border:1px solid var(--border);border-bottom-left-radius:4px}
+  .msg.err .bubble{background:#2a1520;border:1px solid #5a2138;color:#ff9db0}
+  .bubble{padding:12px 16px;border-radius:14px;line-height:1.6;font-size:15px;overflow-wrap:anywhere}
+  .bubble h2{font-size:18px;margin:10px 0 6px}.bubble h3{font-size:16px;margin:12px 0 5px}
+  .bubble h4{font-size:13px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase}
+  .bubble p{margin:6px 0}.bubble strong{color:#fff}
+  .bubble li{list-style:none;position:relative;padding-left:20px;margin:4px 0}
+  .bubble li::before{content:'•';position:absolute;left:4px;color:var(--accent)}
+  pre{background:#0a0c14;border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:10px 0}
+  pre code{font-family:'Cascadia Code',Consolas,monospace;font-size:13px;color:#cdd6f4}
+  :not(pre)>code{background:#0a0c14;border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
+  .typing{display:flex;gap:5px}.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+  .composer{padding:14px 22px 18px;border-top:1px solid var(--border)}
+  .inbar{max-width:820px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;background:var(--panel);
+    border:1px solid var(--border);border-radius:16px;padding:8px 8px 8px 16px}
+  .inbar:focus-within{border-color:var(--accent)}
+  #q{flex:1;background:transparent;border:none;color:var(--text);font-size:15px;resize:none;max-height:170px;outline:none;font-family:inherit;line-height:1.5;padding:6px 0}
+  .iconbtn{border:none;border-radius:12px;width:42px;height:42px;cursor:pointer;font-size:18px;display:grid;place-items:center;flex:0 0 42px}
+  #mic{background:var(--panel-2);color:var(--muted);border:1px solid var(--border)}
+  #mic:hover{color:var(--text)} #mic.rec{background:#e0384d;color:#fff;animation:pulse 1.3s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,56,77,.5)}70%{box-shadow:0 0 0 10px rgba(224,56,77,0)}100%{box-shadow:0 0 0 0 rgba(224,56,77,0)}}
+  #send{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+  #send:disabled{opacity:.5}
+  @media(max-width:760px){aside{display:none}}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Routely Studio</h1>
-    <span class="pill">Powered by Routely</span>
-    <a href="/web/index.html">Home</a>
-    <a href="/web/docs/">Docs</a>
-    <a href="/web/dashboard/">Dashboard</a>
-    <a href="/web/chat.html">Chat</a>
-    <span id="saveStatus" style="color:var(--muted);font-size:12px;margin-left:auto"></span>
-  </header>
+  <aside>
+    <div class="brand"><span class="mark">⚡</span><div>Sarva Studio<small>by Aitotech</small></div></div>
+    <div class="newbtn" onclick="newChat()">✎ New chat</div>
+    <div class="side-h">Recent</div>
+    <div class="threads" id="threads"></div>
+    <nav>
+      <a href="/web/index.html">← Home</a>
+      <a href="/web/chat.html">Quick Chat</a>
+      <a href="/web/dashboard/">Dashboard</a>
+      <a href="/web/docs/">Docs</a>
+    </nav>
+  </aside>
 
-  <div class="layout">
-    <aside class="threads">
-      <h3>Chat threads</h3>
-      <button class="secondary" style="width:100%;margin-bottom:8px" onclick="newThread()">+ New thread</button>
-      <div id="threadList"></div>
-    </aside>
+  <main>
+    <div class="topbar">
+      <div class="modes">
+        <button class="on" data-mode="chat" onclick="setMode(this)">Chat</button>
+        <button data-mode="agent" onclick="setMode(this)">Agent</button>
+      </div>
+      <div class="chip-search">Sarva picks the best model per task</div>
+    </div>
 
-    <aside class="sidebar">
-      <h3>Cloud project</h3>
-      <div class="row">
-        <select id="cloudProject" onchange="loadCloudProject(this.value)" style="width:100%"></select>
-      </div>
-      <div class="row">
-        <button onclick="createCloudProject()">New cloud</button>
-        <button class="secondary" onclick="deleteCloudProject()">Delete</button>
-        <label style="cursor:pointer"><button class="secondary" onclick="document.getElementById('zipInput').click()">Upload zip</button></label>
-        <input id="zipInput" type="file" accept=".zip" style="display:none" onchange="uploadZip(this.files[0])" />
-      </div>
-      <div class="row">
-        <button class="secondary" onclick="runDeployKit()">Deploy kit</button>
-        <button class="secondary" onclick="runSecurityScan()">Security scan</button>
-        <button class="secondary" onclick="runBugbot()">Bugbot review</button>
-      </div>
-      <h3 style="margin-top:12px">Git</h3>
-      <div class="row">
-        <button class="secondary" onclick="refreshGit()">Status</button>
-        <button class="secondary" onclick="showGitDiff()">Diff</button>
-      </div>
-      <input id="commitMsg" placeholder="Commit message" style="width:100%;padding:6px;margin-top:6px;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);font-size:12px" />
-      <button class="secondary" style="width:100%;margin-top:4px" onclick="gitCommit()">Commit</button>
-      <pre id="gitOut" class="git-out"></pre>
-      <h3 style="margin-top:12px">Files</h3>
-      <ul id="fileTree" class="file-tree"></ul>
-      <div class="row" style="margin-top:8px">
-        <input id="newFileName" placeholder="src/app.py" />
-        <button class="secondary" onclick="addCloudFile()">Add</button>
-      </div>
-      <h3 style="margin-top:12px">API Key</h3>
-      <input id="apiKey" type="password" placeholder="SaaS API key" style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);margin-bottom:6px" />
-      <button class="secondary" style="width:100%" onclick="saveSettings()">Save key</button>
-    </aside>
-
-    <main class="editor-wrap">
-      <div id="editor" style="flex:1"></div>
-      <div id="termDrawer"><pre id="termLog"></pre><input id="termInput" placeholder="Terminal: npm test, python main.py, git status..." onkeydown="if(event.key==='Enter')runTermCmd()" /></div>
-    </main>
-
-    <aside class="chat-panel">
-      <div style="padding:10px;border-bottom:1px solid var(--border)">
-        <div class="tabs">
-          <button id="tabChat" class="tab-active" onclick="setTab('chat')">Chat</button>
-          <button id="tabAgent" onclick="setTab('agent')">Agent</button>
-          <button id="tabComposer" onclick="setTab('composer')">Composer</button>
+    <div id="stream">
+      <div class="center" id="welcome">
+        <div class="logo">⚡</div>
+        <h1>What should we build?</h1>
+        <p>Describe a feature, paste an error, or ask a question — in English or Hinglish. Sarva routes it to the best model and refines the answer.</p>
+        <div class="cards">
+          <div class="actcard" onclick="ask('Explain what this code does and how to improve it')"><div class="ic">🔭</div><b>Explore &amp; understand</b><span>Read and explain code</span></div>
+          <div class="actcard" onclick="ask('Build a REST API endpoint in FastAPI with a test')"><div class="ic">🛠️</div><b>Build a feature</b><span>New app, tool, or endpoint</span></div>
+          <div class="actcard" onclick="ask('Review this code and suggest changes')"><div class="ic">🔁</div><b>Review &amp; improve</b><span>Suggest safer, cleaner code</span></div>
+          <div class="actcard" onclick="ask('I have a bug: NullPointerException on login. Help me fix it')"><div class="ic">🐞</div><b>Fix an issue</b><span>Debug errors and failures</span></div>
         </div>
-        <div class="row">
-          <select id="workMode">
-            <option value="auto">Mode: Auto</option>
-            <option value="ship">Ship (full build)</option>
-            <option value="fix">Fix (bugs only)</option>
-            <option value="extend">Extend (add feature)</option>
-            <option value="guard">Guard (security scan)</option>
-            <option value="explain">Explain (no edits)</option>
-            <option value="deploy">Deploy (Docker/K8s)</option>
-          </select>
-          <select id="searchMode">
-            <option value="auto">Search: Auto</option>
-            <option value="on">On</option>
-            <option value="off">Off</option>
-          </select>
-          <label><input type="checkbox" id="attachFile" checked /> @file</label>
-        </div>
-      </div>
-      <div id="chatLog" class="chat-log"></div>
-      <div class="chat-input">
-        <textarea id="prompt" placeholder="Ask Routely — build an app, fix a bug, git push..."></textarea>
-        <button id="sendBtn" onclick="send()">Send to Routely</button>
-      </div>
-    </aside>
-  </div>
-
-  <div id="inlineModal">
-    <div class="box">
-      <strong>Inline edit (Ctrl+K)</strong>
-      <textarea id="inlineInstr" placeholder="What should change in the selection?"></textarea>
-      <div class="row">
-        <button onclick="applyInlineEdit()">Apply</button>
-        <button class="secondary" onclick="closeInline()">Cancel</button>
       </div>
     </div>
-  </div>
 
-  <script>
-    const LS_KEY = 'nr_key';
-    const LS_THREAD = 'sarva_active_thread';
-    const LS_SEARCH = 'sarva_search_mode';
-    const LS_WORK = 'sarva_work_mode';
-    let editor = null, activeTab = 'chat', inlineRange = null;
-    let cloudProjectId = null, activeFile = 'README.md', fileCache = {};
-    let threadId = localStorage.getItem(LS_THREAD) || null;
-    let saveTimer = null;
+    <div class="composer">
+      <div class="inbar">
+        <textarea id="q" rows="1" placeholder="Ask Sarva to build, explain, or fix…  (or 🎤 to speak)"></textarea>
+        <button id="mic" class="iconbtn" title="Speak">🎤</button>
+        <button id="send" class="iconbtn" title="Send">➤</button>
+      </div>
+    </div>
+  </main>
 
-    function authHeaders() {
-      const key = document.getElementById('apiKey').value || localStorage.getItem(LS_KEY) || '';
-      return { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' };
-    }
-    function api(path, opts = {}) {
-      return fetch(window.location.origin + path, { ...opts, headers: { ...authHeaders(), ...(opts.headers || {}) } });
-    }
+<script>
+  const API=window.location.origin;
+  const stream=document.getElementById('stream'), welcome=document.getElementById('welcome');
+  const q=document.getElementById('q'), send=document.getElementById('send'), mic=document.getElementById('mic');
+  const threadsEl=document.getElementById('threads');
+  let mode='chat', threads=JSON.parse(localStorage.getItem('sarva_threads')||'[]'), curTitle=null;
 
-    function saveSettings() {
-      localStorage.setItem(LS_KEY, document.getElementById('apiKey').value);
-      localStorage.setItem(LS_SEARCH, document.getElementById('searchMode').value);
-      localStorage.setItem(LS_WORK, document.getElementById('workMode').value);
-      refreshCloudProjects();
-      refreshThreads();
-    }
+  function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+  function fmt(src){
+    const b=[]; src=src.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g,(m,c)=>{b.push('<pre><code>'+esc(c.replace(/\n$/,''))+'</code></pre>');return ' B'+(b.length-1)+' ';});
+    let t=esc(src);
+    t=t.replace(/^#{4,}\s+(.*)$/gm,'<h4>$1</h4>').replace(/^###\s+(.*)$/gm,'<h3>$1</h3>').replace(/^##\s+(.*)$/gm,'<h3>$1</h3>').replace(/^#\s+(.*)$/gm,'<h2>$1</h2>');
+    t=t.replace(/^\s*\d+\.\s+(.*)$/gm,'<li>$1</li>').replace(/^\s*[-*]\s+(.*)$/gm,'<li>$1</li>');
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
+    t=t.split(/\n{2,}/).map(c=>{c=c.trim();if(!c)return'';if(/^<(h2|h3|h4|li|pre)/.test(c))return c.replace(/\n/g,'');return'<p>'+c.replace(/\n/g,'<br>')+'</p>';}).join('');
+    return t.replace(/ B(\d+) /g,(m,i)=>b[+i]);
+  }
+  function bubble(role,html){
+    welcome.style.display='none';
+    const el=document.createElement('div'); el.className='msg '+role;
+    const av=role==='user'?'You':(role==='err'?'!':'S');
+    el.innerHTML='<div class="av">'+av+'</div><div class="bubble">'+html+'</div>';
+    stream.appendChild(el); stream.scrollTop=stream.scrollHeight; return el;
+  }
+  function typing(){welcome.style.display='none';const el=document.createElement('div');el.className='msg sarva';el.id='typing';
+    el.innerHTML='<div class="av">S</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+    stream.appendChild(el);stream.scrollTop=stream.scrollHeight;}
 
-    async function deleteCloudProject() {
-      if (!cloudProjectId) return alert('Select a project first');
-      if (!confirm('Delete this cloud project?')) return;
-      const res = await api('/saas/v1/projects/' + cloudProjectId, { method: 'DELETE' });
-      if (!res.ok) { const d = await res.json(); return alert(d.detail || 'Delete failed'); }
-      cloudProjectId = null;
-      fileCache = {};
-      renderTree();
-      await refreshCloudProjects();
-    }
+  function renderThreads(){threadsEl.innerHTML=threads.map((t,i)=>'<div class="thread'+(t.title===curTitle?' active':'')+'" onclick="loadThread('+i+')">'+esc(t.title)+'</div>').join('');}
+  function newChat(){curTitle=null;stream.innerHTML='';stream.appendChild(welcome);welcome.style.display='';renderThreads();q.focus();}
+  function loadThread(i){const t=threads[i];curTitle=t.title;stream.innerHTML='';t.msgs.forEach(m=>bubble(m.role,m.role==='user'?esc(m.text):fmt(m.text)));renderThreads();}
+  function saveTurn(role,text){if(!curTitle){curTitle=text.slice(0,38);threads.unshift({title:curTitle,msgs:[]});}
+    const t=threads.find(x=>x.title===curTitle);if(t){t.msgs.push({role,text});threads=threads.slice(0,20);localStorage.setItem('sarva_threads',JSON.stringify(threads));}renderThreads();}
 
-    async function runDeployKit() {
-      if (!cloudProjectId) return alert('Select a cloud project first');
-      const res = await api('/saas/v1/projects/' + cloudProjectId + '/deploy-kit', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      alert(data.message || 'Deploy kit generated');
-      await loadCloudProject(cloudProjectId);
-    }
+  async function ask(text){
+    text=(text||'').trim(); if(!text)return; if(listening)stopMic();
+    q.value='';q.style.height='auto'; bubble('user',esc(text)); saveTurn('user',text);
+    send.disabled=true; typing();
+    try{
+      const r=await fetch(API+'/public/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:(mode==='agent'?'sarva':'')})});
+      document.getElementById('typing')?.remove();
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
+      const d=await r.json(); bubble('sarva',fmt(d.answer||'(no answer)')); saveTurn('sarva',d.answer||'');
+    }catch(err){document.getElementById('typing')?.remove();bubble('err','Something went wrong. '+esc(err.message||''));}
+    finally{send.disabled=false;q.focus();}
+  }
+  window.ask=ask; window.newChat=newChat; window.loadThread=loadThread;
+  window.setMode=(b)=>{document.querySelectorAll('.modes button').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.mode;};
 
-    async function runSecurityScan() {
-      if (!cloudProjectId) return alert('Select a cloud project first');
-      const res = await api('/saas/v1/projects/' + cloudProjectId + '/security-scan', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      const lines = (data.findings || []).slice(0, 8).map(f => `[${f.severity}] ${f.file}: ${f.message}`).join('\n');
-      addMsg('bot', (data.summary || 'Scan done') + (lines ? '\n\n' + lines : ''));
-    }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let rec=null,listening=false,micBase='';
+  function stopMic(){if(rec){try{rec.stop()}catch(e){}}}
+  function startMic(){if(!SR){alert('Voice works in Chrome or Edge.');return;}
+    rec=new SR();rec.lang='en-IN';rec.interimResults=true;rec.continuous=true;micBase=q.value.trim();
+    rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;q.value=(micBase?micBase+' ':'')+t;q.dispatchEvent(new Event('input'));};
+    rec.onend=()=>{listening=false;mic.classList.remove('rec');};rec.onerror=()=>{listening=false;mic.classList.remove('rec');};
+    try{rec.start();listening=true;mic.classList.add('rec');q.focus();}catch(e){listening=false;mic.classList.remove('rec');}}
+  mic.onclick=()=>listening?stopMic():startMic(); if(!SR)mic.style.display='none';
 
-    async function runBugbot() {
-      if (!cloudProjectId) return alert('Select a cloud project first');
-      addMsg('bot', 'Bugbot reviewing...');
-      const res = await api('/v1/review/code', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId }) });
-      const data = await res.json();
-      if (!res.ok) return addMsg('bot', 'Error: ' + (data.detail || JSON.stringify(data)));
-      addMsg('bot', (data.summary || '') + '\n\n' + (data.ai_review || JSON.stringify(data.security_scan?.findings?.slice(0,5), null, 2)));
-    }
-
-    async function refreshGit() {
-      if (!cloudProjectId) return alert('Select project');
-      const res = await api('/v1/git/status?project_id=' + encodeURIComponent(cloudProjectId));
-      const data = await res.json();
-      document.getElementById('gitOut').textContent = data.output || data.error || JSON.stringify(data);
-    }
-    async function showGitDiff() {
-      if (!cloudProjectId) return;
-      const res = await api('/v1/git/diff?project_id=' + encodeURIComponent(cloudProjectId));
-      const data = await res.json();
-      document.getElementById('gitOut').textContent = data.output || data.error || '(no diff)';
-    }
-    async function gitCommit() {
-      if (!cloudProjectId) return alert('Select project');
-      const message = document.getElementById('commitMsg').value.trim() || 'Update from Sarva Studio';
-      const res = await api('/v1/git/commit', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId, message }) });
-      const data = await res.json();
-      document.getElementById('gitOut').textContent = data.output || data.error || JSON.stringify(data);
-      await refreshGit();
-    }
-
-    async function runTermCmd() {
-      const input = document.getElementById('termInput');
-      const cmd = input.value.trim();
-      if (!cmd || !cloudProjectId) return alert('Select project and enter command');
-      const log = document.getElementById('termLog');
-      log.textContent += '$ ' + cmd + '\n';
-      input.value = '';
-      const res = await api('/v1/terminal/run', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId, command: cmd }) });
-      const data = await res.json();
-      log.textContent += (data.output || data.error || JSON.stringify(data)) + '\n';
-      log.parentElement.scrollTop = 9999;
-      if (cmd.startsWith('git')) await refreshGit();
-    }
-
-    function openInline() {
-      if (!editor) return;
-      const sel = editor.getSelection();
-      const model = editor.getModel();
-      if (!sel || sel.isEmpty()) return alert('Select code first, then press Ctrl+K');
-      inlineRange = sel;
-      document.getElementById('inlineInstr').value = '';
-      document.getElementById('inlineModal').classList.add('open');
-    }
-    function closeInline() { document.getElementById('inlineModal').classList.remove('open'); inlineRange = null; }
-    async function applyInlineEdit() {
-      const instruction = document.getElementById('inlineInstr').value.trim();
-      if (!instruction || !inlineRange || !editor) return;
-      const model = editor.getModel();
-      const selection = model.getValueInRange(inlineRange);
-      const res = await api('/v1/inline/edit', {
-        method: 'POST',
-        body: JSON.stringify({
-          project_id: cloudProjectId,
-          file_path: activeFile,
-          full_content: model.getValue(),
-          selection,
-          instruction,
-          language: model.getLanguageId(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      editor.executeEdits('inline', [{ range: inlineRange, text: data.replacement || '' }]);
-      fileCache[activeFile] = editor.getValue();
-      await saveFileNow();
-      closeInline();
-    }
-
-    async function runComposerTask(q) {
-      if (!cloudProjectId) return alert('Select cloud project for Composer');
-      addMsg('user', '[Composer] ' + q);
-      const res = await api('/v1/composer/run', {
-        method: 'POST',
-        body: JSON.stringify({ task: q, project_id: cloudProjectId, rules: fileCache['.sarvarules'] || '' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-      addMsg('bot', data.answer + (data.files_changed?.length ? '\nFiles: ' + data.files_changed.join(', ') : ''));
-      await loadCloudProject(cloudProjectId);
-    }
-      if (!cloudProjectId) return alert('Select a cloud project first');
-      const res = await api('/saas/v1/projects/' + cloudProjectId + '/security-scan', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      const lines = (data.findings || []).slice(0, 8).map(f => `[${f.severity}] ${f.file}: ${f.message}`).join('\n');
-      addMsg('bot', (data.summary || 'Scan done') + (lines ? '\n\n' + lines : ''));
-    }
-
-    async function refreshCloudProjects() {
-      const sel = document.getElementById('cloudProject');
-      try {
-        const res = await api('/saas/v1/projects');
-        if (!res.ok) throw new Error('Cloud projects need SaaS signup + DATABASE_URL');
-        const data = await res.json();
-        sel.innerHTML = '<option value="">— select —</option>';
-        (data.projects || []).forEach(p => {
-          const o = document.createElement('option');
-          o.value = p.id; o.textContent = p.name;
-          if (p.id === cloudProjectId) o.selected = true;
-          sel.appendChild(o);
-        });
-      } catch (e) {
-        sel.innerHTML = '<option value="">Local only — add API key</option>';
-      }
-    }
-
-    async function createCloudProject() {
-      const name = prompt('Project name:', 'my-app');
-      if (!name) return;
-      const res = await api('/saas/v1/projects', { method: 'POST', body: JSON.stringify({ name }) });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      cloudProjectId = data.id;
-      await refreshCloudProjects();
-      await loadCloudProject(data.id);
-    }
-
-    async function uploadZip(file) {
-      if (!file) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      const key = document.getElementById('apiKey').value || localStorage.getItem(LS_KEY);
-      const res = await fetch(window.location.origin + '/saas/v1/projects/upload', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: fd
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || JSON.stringify(data));
-      cloudProjectId = data.id;
-      await refreshCloudProjects();
-      await loadCloudProject(data.id);
-    }
-
-    async function loadCloudProject(id) {
-      if (!id) return;
-      cloudProjectId = id;
-      const res = await api('/saas/v1/projects/' + id + '/files');
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || 'Load failed');
-      fileCache = {};
-      for (const path of data.files || []) {
-        const fr = await api('/saas/v1/projects/' + id + '/files/' + path.split('/').map(encodeURIComponent).join('/'));
-        if (fr.ok) { const fd = await fr.json(); fileCache[path] = fd.content; }
-      }
-      if (!activeFile || !fileCache[activeFile]) activeFile = (data.files || [])[0] || 'README.md';
-      renderTree();
-      loadEditorContent();
-    }
-
-    function renderTree() {
-      const ul = document.getElementById('fileTree');
-      ul.innerHTML = '';
-      Object.keys(fileCache).sort().forEach(path => {
-        const li = document.createElement('li');
-        li.textContent = path;
-        if (path === activeFile) li.classList.add('active');
-        li.onclick = () => { saveFileDebounced(); activeFile = path; renderTree(); loadEditorContent(); };
-        ul.appendChild(li);
-      });
-    }
-
-    async function addCloudFile() {
-      const path = document.getElementById('newFileName').value.trim();
-      if (!path || !cloudProjectId) return alert('Select cloud project first');
-      fileCache[path] = '';
-      activeFile = path;
-      renderTree();
-      loadEditorContent();
-      await saveFileNow();
-    }
-
-    function loadEditorContent() {
-      if (editor) editor.setValue(fileCache[activeFile] ?? '');
-    }
-
-    function saveFileDebounced() {
-      if (editor && activeFile) fileCache[activeFile] = editor.getValue();
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveFileNow, 1500);
-      document.getElementById('saveStatus').textContent = 'Saving...';
-    }
-
-    async function saveFileNow() {
-      if (!cloudProjectId || !activeFile) { document.getElementById('saveStatus').textContent = ''; return; }
-      const content = fileCache[activeFile] ?? '';
-      const res = await api('/saas/v1/projects/' + cloudProjectId + '/files/' + activeFile.split('/').map(encodeURIComponent).join('/'), {
-        method: 'PUT', body: JSON.stringify({ content })
-      });
-      document.getElementById('saveStatus').textContent = res.ok ? 'Saved ✓' : 'Save failed';
-    }
-
-    async function refreshThreads() {
-      const box = document.getElementById('threadList');
-      box.innerHTML = '';
-      try {
-        const res = await api('/saas/v1/threads');
-        if (!res.ok) throw new Error('');
-        const data = await res.json();
-        (data.threads || []).forEach(t => {
-          const d = document.createElement('div');
-          d.className = 'thread-item' + (t.id === threadId ? ' active' : '');
-          d.textContent = (t.title || 'Chat').slice(0, 40);
-          d.onclick = () => selectThread(t.id);
-          box.appendChild(d);
-        });
-      } catch {
-        box.innerHTML = '<p style="color:var(--muted);font-size:11px">SaaS key + DB for memory</p>';
-      }
-    }
-
-    async function newThread() {
-      const body = { title: 'New chat' };
-      if (cloudProjectId) body.project_id = cloudProjectId;
-      const res = await api('/saas/v1/threads', { method: 'POST', body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) return alert(data.detail || 'Need SaaS account');
-      threadId = data.id;
-      localStorage.setItem(LS_THREAD, threadId);
-      document.getElementById('chatLog').innerHTML = '';
-      await refreshThreads();
-    }
-
-    async function selectThread(id) {
-      threadId = id;
-      localStorage.setItem(LS_THREAD, id);
-      await refreshThreads();
-      const res = await api('/saas/v1/threads/' + id + '/messages');
-      const data = await res.json();
-      const log = document.getElementById('chatLog');
-      log.innerHTML = '';
-      (data.messages || []).forEach(m => addMsg(m.role === 'user' ? 'user' : 'bot', m.content, false));
-    }
-
-    function updateSendLabel() {
-      const labels = { chat: 'Send to Sarva', agent: 'Run Agent', composer: 'Run Composer' };
-      document.getElementById('sendBtn').textContent = labels[activeTab] || 'Send';
-    }
-
-    function setTab(tab) {
-      activeTab = tab;
-      document.getElementById('tabChat').classList.toggle('tab-active', tab === 'chat');
-      document.getElementById('tabAgent').classList.toggle('tab-active', tab === 'agent');
-      document.getElementById('tabComposer').classList.toggle('tab-active', tab === 'composer');
-      document.getElementById('termDrawer').classList.toggle('open', tab === 'agent' || tab === 'composer');
-      updateSendLabel();
-    }
-
-    function addMsg(role, text, scroll = true) {
-      const d = document.createElement('div');
-      d.className = 'chat-msg';
-      d.textContent = (role === 'user' ? 'You: ' : 'Sarva: ') + text;
-      document.getElementById('chatLog').appendChild(d);
-      if (scroll) document.getElementById('chatLog').scrollTop = 99999;
-    }
-
-    async function send() {
-      const q = document.getElementById('prompt').value.trim();
-      if (!q) return;
-      saveFileDebounced();
-      if (!threadId && activeTab === 'chat') await newThread();
-      addMsg('user', q);
-      document.getElementById('prompt').value = '';
-      document.getElementById('sendBtn').disabled = true;
-      const search = document.getElementById('searchMode').value;
-      const work_mode = document.getElementById('workMode').value;
-      let file_context = '';
-      if (document.getElementById('attachFile').checked && activeFile) {
-        file_context = 'File: ' + activeFile + '\n```\n' + (fileCache[activeFile] || '') + '\n```';
-      }
-      const rules = fileCache['.sarvarules'] || '';
-      try {
-        if (activeTab === 'composer') {
-          await runComposerTask(q);
-        } else {
-        const path = activeTab === 'agent' ? '/v1/agent/run' : '/v1/chat';
-        const body = activeTab === 'agent'
-          ? { task: q, file_context, rules, project_id: cloudProjectId, work_mode }
-          : { message: q, search, work_mode, file_context, rules, thread_id: threadId, project_id: cloudProjectId };
-        const res = await api(path, { method: 'POST', body: JSON.stringify(body) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
-        addMsg('bot', data.answer || JSON.stringify(data, null, 2));
-        if (data.thread_id) threadId = data.thread_id;
-        await refreshThreads();
-        if (activeTab === 'agent' && cloudProjectId) await loadCloudProject(cloudProjectId);
-        }
-      } catch (e) {
-        addMsg('bot', 'Error: ' + e.message);
-      }
-      document.getElementById('sendBtn').disabled = false;
-    }
-
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
-    require(['vs/editor/editor.main'], function () {
-      editor = monaco.editor.create(document.getElementById('editor'), {
-        value: '# Sarva Studio\n', language: 'markdown', theme: 'vs-dark', automaticLayout: true,
-      });
-      editor.onDidChangeModelContent(() => saveFileDebounced());
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => openInline());
-      monaco.languages.registerCompletionItemProvider('*', {
-        triggerCharacters: ['.', '/', '"', "'", ' '],
-        provideCompletionItems: async (model, position) => {
-          const key = document.getElementById('apiKey').value || localStorage.getItem(LS_KEY);
-          if (!key) return { suggestions: [] };
-          const line = model.getLineContent(position.lineNumber);
-          const prefix = line.substring(0, position.column - 1);
-          try {
-            const res = await api('/v1/complete/tab', {
-              method: 'POST',
-              body: JSON.stringify({
-                project_id: cloudProjectId,
-                file_path: activeFile,
-                content: model.getValue(),
-                prefix,
-                line: position.lineNumber,
-                column: position.column,
-              }),
-            });
-            const data = await res.json();
-            if (!data.completion) return { suggestions: [] };
-            return {
-              suggestions: [{
-                label: data.completion.slice(0, 40),
-                kind: monaco.languages.CompletionItemKind.Snippet,
-                insertText: data.completion,
-                range: { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column },
-              }],
-            };
-          } catch { return { suggestions: [] }; }
-        },
-      });
-      const savedKey = localStorage.getItem(LS_KEY);
-      if (savedKey) document.getElementById('apiKey').value = savedKey;
-      const savedSearch = localStorage.getItem(LS_SEARCH);
-      if (savedSearch) document.getElementById('searchMode').value = savedSearch;
-      const savedWork = localStorage.getItem(LS_WORK);
-      if (savedWork) document.getElementById('workMode').value = savedWork;
-      updateSendLabel();
-      refreshCloudProjects();
-      refreshThreads();
-      if (threadId) selectThread(threadId);
-    });
-  </script>
+  send.onclick=()=>ask(q.value);
+  q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(q.value);}});
+  q.addEventListener('input',()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,170)+'px';});
+  renderThreads(); q.focus();
+</script>
 </body>
 </html>

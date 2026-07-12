@@ -1,4 +1,4 @@
-"""Aksh Skills / MCP registration — feeds Sarva training pipeline."""
+"""Sarva Skills / MCP registration — feeds Sarva training pipeline."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from neuralrouter.auth import verify_auth
 from saas.auth.context import AuthContext
 
-router = APIRouter(prefix="/saas/v1/skills", tags=["aksh-skills"])
+router = APIRouter(prefix="/saas/v1/skills", tags=["sarva-skills"])
 
 
 class RegisterSkillRequest(BaseModel):

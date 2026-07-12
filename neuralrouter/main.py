@@ -123,7 +123,7 @@ class ChatResponse(BaseModel):
     row_id: str
     answer: str
     brain_used: str = PUBLIC_MODEL_ID
-    powered_by: str = "routely"
+    powered_by: str = "sarva"
     thread_id: Optional[str] = None
     collaborative: bool
     confidence: float
@@ -182,7 +182,7 @@ def _resolve_force_model(model: str) -> Optional[str]:
     if model in (
         "auto",
         "sarva",
-        "routely",
+        "sarva",
         "aksh-sarva",
         "neuralrouter-auto",
         "default",
@@ -309,8 +309,8 @@ async def health():
         "status": "ok",
         "app": APP_NAME,
         "version": APP_VERSION,
-        "product": "Routely by Aitotech",
-        "model": "Routely",
+        "product": "Sarva by Aitotech",
+        "model": "Sarva",
         "saas_db": saas_db_enabled(),
         "models_loaded": list(REGISTRY.keys()),
         "model_strings": {k: v.get("api_model_string") for k, v in REGISTRY.items()},
@@ -344,9 +344,9 @@ def _public_demo_auth(client_label: str) -> AuthContext:
 
 def _agent_rules(agent_type: str) -> str | None:
     kind = (agent_type or "sales").lower().strip()
-    if kind in ("aksh", "routely"):
+    if kind in ("aksh", "sarva"):
         return (
-            "You are Routely, the coding AI inside Routely Studio (browser code editor). "
+            "You are Sarva, the coding AI inside Sarva Studio (browser code editor). "
             "The user is trying the product on aitotech.in. "
             "RULES — follow strictly: "
             "1) Reply in simple English only. Never use Hindi, Hinglish, or terms like Didi/Bhai. "
@@ -354,11 +354,11 @@ def _agent_rules(agent_type: str) -> str | None:
             "3) Never pitch AitoTech services, book a call, or contact forms. "
             "4) For build requests, explain what files you would create or change and give concise code guidance. "
             "5) Do not ask who the user is; you do not have their identity. "
-            "6) User sees only the name Routely — never mention internal model names."
+            "6) User sees only the name Sarva — never mention internal model names."
         )
     if kind == "support":
-        return "You are AitoTech support. Help with Routely, billing, and aitotech.in. Simple English."
-    return "You are AitoTech sales. Help visitors understand Routely and AitoTech services. Simple English."
+        return "You are AitoTech support. Help with Sarva, billing, and aitotech.in. Simple English."
+    return "You are AitoTech sales. Help visitors understand Sarva and AitoTech services. Simple English."
 
 
 @app.post("/public/chat")
@@ -385,9 +385,9 @@ async def public_chat(
     from neuralrouter.model_clients import provider_configured
 
     if not provider_configured():
-        raise HTTPException(503, "Routely providers are not configured (OPENROUTER_API_KEY).")
+        raise HTTPException(503, "Sarva providers are not configured (OPENROUTER_API_KEY).")
 
-    work_mode: WorkMode = "ship" if body.agent_type.lower() in ("aksh", "routely") else "auto"
+    work_mode: WorkMode = "ship" if body.agent_type.lower() in ("aksh", "sarva") else "auto"
     try:
         result, _row_id = await _execute_chat(
             body.message.strip(),
@@ -403,10 +403,10 @@ async def public_chat(
         logger.exception("public_chat failed")
         raise HTTPException(
             503,
-            detail=f"Routely temporarily unavailable ({type(exc).__name__}): {str(exc)[:300]}",
+            detail=f"Sarva temporarily unavailable ({type(exc).__name__}): {str(exc)[:300]}",
         ) from exc
 
-    agent_label = "Routely" if body.agent_type.lower() in ("aksh", "routely") else "AitoTech AI"
+    agent_label = "Sarva" if body.agent_type.lower() in ("aksh", "sarva") else "AitoTech AI"
     return {
         "agent": agent_label,
         "answer": result.answer,
@@ -423,7 +423,7 @@ async def root():
 @app.get("/api")
 async def api_info():
     return {
-        "product": "Routely by Aitotech",
+        "product": "Sarva by Aitotech",
         "model": PUBLIC_MODEL_ID,
         "docs": "/docs",
         "user_docs": "/web/docs/",
@@ -456,7 +456,7 @@ async def chat(
         row_id=row_id,
         answer=result.answer,
         brain_used=PUBLIC_MODEL_ID,
-        powered_by="routely",
+        powered_by="sarva",
         thread_id=body.thread_id,
         collaborative=result.collaborative,
         confidence=result.confidence,

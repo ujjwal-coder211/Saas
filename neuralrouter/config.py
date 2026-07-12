@@ -55,8 +55,8 @@ CORS_ORIGINS = [
     if o.strip()
 ]
 
-APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "Routely API")
-APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "0.1.0-routely")
+APP_NAME = os.environ.get("NEURALROUTER_APP_NAME", "Sarva API")
+APP_VERSION = os.environ.get("NEURALROUTER_APP_VERSION", "0.1.0-sarva")
 
 # SaaS infrastructure
 DATABASE_URL = os.environ.get("DATABASE_URL", "")

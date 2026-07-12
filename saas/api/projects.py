@@ -1,4 +1,4 @@
-"""Aksh Cloud Projects — upload, file CRUD."""
+"""Sarva Cloud Projects — upload, file CRUD."""
 
 from __future__ import annotations
 
@@ -95,12 +95,12 @@ async def create_project(
             ),
             {"id": project_id, "uid": user_id, "name": name, "prefix": prefix},
         )
-    write_file(user_id, project_id, "README.md", f"# {name}\n\nCreated with Aksh Studio.\n")
-    write_file(user_id, project_id, ".akshrules", "Be concise. Prefer working code.\n")
+    write_file(user_id, project_id, "README.md", f"# {name}\n\nCreated with Sarva Studio.\n")
+    write_file(user_id, project_id, ".sarvarules", "Be concise. Prefer working code.\n")
     write_file(
         user_id,
         project_id,
-        ".aksh/mcp.json",
+        ".sarva/mcp.json",
         '{\n  "mcpServers": {}\n}\n',
     )
     from neuralrouter.parity.git import ensure_git_repo
