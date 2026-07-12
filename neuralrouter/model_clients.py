@@ -170,10 +170,10 @@ async def call_model(
         content = response.choices[0].message.content or ""
         usage = response.usage
 
-        if len(content.strip()) < 10:
+        if not content.strip():
             balancer.record_failure(_provider_key(model_id))
             globals()["_LAST_MODEL_ERROR"] = (
-                f"EmptyOrShortResponse from {model_id} "
+                f"EmptyResponse from {model_id} "
                 f"({REGISTRY[model_id].get('api_model_string')}) — "
                 "the provider returned no usable content (often a rate-limited or "
                 "data-policy-gated free model)."
