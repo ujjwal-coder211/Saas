@@ -46,6 +46,11 @@
   .msg.sarva .bubble{background:var(--sarva);border:1px solid var(--border);
     border-bottom-left-radius:4px}
   .msg.sarva .meta{color:var(--muted);font-size:11px;margin-top:6px}
+  .msg .col{min-width:0}
+  .actions{display:flex;gap:8px;margin-top:8px}
+  .act{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);
+    border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+  .act:hover{color:var(--text);border-color:var(--accent)}
   .msg.err .bubble{background:#2a1520;border:1px solid #5a2138;color:#ff9db0}
   /* markdown */
   .bubble h2{font-size:18px;margin:10px 0 6px}
@@ -169,14 +174,37 @@
     return t;
   }
 
-  function bubble(role, html, meta){
+  function bubble(role, html, meta, raw){
     empty.style.display='none';
     const el=document.createElement('div');
     el.className='msg '+role;
     const av=role==='user'?'You':(role==='err'?'!':'S');
-    el.innerHTML='<div class="av">'+av+'</div><div><div class="bubble">'+html+'</div>'+
-                 (meta?'<div class="meta">'+meta+'</div>':'')+'</div>';
+    let actions='';
+    if(role==='sarva' && raw){
+      actions='<div class="actions">'
+        +'<button class="act" onclick="copyMsg(this)">Copy</button>'
+        +'<button class="act" onclick="speakMsg(this)">🔊 Listen</button></div>';
+    }
+    el.innerHTML='<div class="av">'+av+'</div><div class="col"><div class="bubble">'+html+'</div>'+
+                 (meta?'<div class="meta">'+meta+'</div>':'')+actions+'</div>';
+    if(raw) el.dataset.raw=raw;
     messages.appendChild(el); messages.scrollTop=messages.scrollHeight;
+  }
+  function copyMsg(btn){
+    navigator.clipboard.writeText(btn.closest('.msg').dataset.raw||'').then(()=>{
+      btn.textContent='✓ Copied'; setTimeout(()=>btn.textContent='Copy',1400);
+    }).catch(()=>{ btn.textContent='Copy failed'; setTimeout(()=>btn.textContent='Copy',1400); });
+  }
+  let speakingBtn=null;
+  function speakMsg(btn){
+    if(!('speechSynthesis' in window)){ alert('Listen not supported in this browser.'); return; }
+    if(speakingBtn===btn){ speechSynthesis.cancel(); return; }
+    speechSynthesis.cancel();
+    if(speakingBtn) speakingBtn.innerHTML='🔊 Listen';
+    const u=new SpeechSynthesisUtterance((btn.closest('.msg').dataset.raw||'').replace(/```[\s\S]*?```/g,' code block '));
+    u.lang='en-IN'; u.rate=1;
+    u.onend=u.onerror=()=>{ btn.innerHTML='🔊 Listen'; speakingBtn=null; };
+    speakingBtn=btn; btn.innerHTML='⏹ Stop'; speechSynthesis.speak(u);
   }
   function typing(){
     empty.style.display='none';
@@ -198,7 +226,7 @@
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
       const data=await r.json();
       const models=(data.experts_used||[]).join(', ');
-      bubble('sarva', fmt(data.answer||'(no answer)'), models?('via '+models):'');
+      bubble('sarva', fmt(data.answer||'(no answer)'), models?('via '+models):'', data.answer||'');
       history.push({role:'user',content:text},{role:'assistant',content:data.answer||''});
       history=history.slice(-12);
     }catch(err){
