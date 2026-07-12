@@ -148,6 +148,8 @@ class OpenAIChatRequest(BaseModel):
 class PublicChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
     agent_type: str = Field(default="sarva", max_length=32)
+    # recent turns for context (stateless memory): [{"role":"user"/"assistant","content":"..."}]
+    history: list[dict] = Field(default_factory=list)
 
 
 class FeedbackRequest(BaseModel):
@@ -388,9 +390,27 @@ async def public_chat(
         raise HTTPException(503, "Sarva providers are not configured (OPENROUTER_API_KEY).")
 
     work_mode: WorkMode = "ship" if body.agent_type.lower() == "ship" else "auto"
+
+    # Stateless memory: fold the recent turns into the message so Sarva follows
+    # the conversation (understands follow-ups, thanks, references to earlier).
+    user_message = body.message.strip()
+    if body.history:
+        turns = []
+        for h in body.history[-8:]:
+            role = "User" if str(h.get("role")) == "user" else "Sarva"
+            content = str(h.get("content") or "")[:700]
+            if content:
+                turns.append(f"{role}: {content}")
+        if turns:
+            user_message = (
+                "Conversation so far:\n" + "\n".join(turns)
+                + "\n\nContinue the conversation naturally, using the context above. "
+                + "User's new message: " + user_message
+            )
+
     try:
         result, _row_id = await _execute_chat(
-            body.message.strip(),
+            user_message,
             None,
             auth,
             search_mode="auto",

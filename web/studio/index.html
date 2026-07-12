@@ -173,8 +173,10 @@
     text=(text||'').trim(); if(!text)return; if(listening)stopMic();
     q.value='';q.style.height='auto'; bubble('user',esc(text)); saveTurn('user',text);
     send.disabled=true; typing();
+    const _t=threads.find(x=>x.title===curTitle);
+    const _hist=(_t?_t.msgs.slice(0,-1):[]).slice(-8).map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
     try{
-      const r=await fetch(API+'/public/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:(mode==='agent'?'ship':'sarva')})});
+      const r=await fetch(API+'/public/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:(mode==='agent'?'ship':'sarva'),history:_hist})});
       document.getElementById('typing')?.remove();
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
       const d=await r.json(); bubble('sarva',fmt(d.answer||'(no answer)')); saveTurn('sarva',d.answer||'');

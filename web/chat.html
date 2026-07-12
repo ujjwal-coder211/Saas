@@ -132,6 +132,7 @@
 
 <script>
   const API = window.location.origin;      // always the server that served this page
+  let history = [];                        // recent turns for conversation memory
   const messages = document.getElementById('messages');
   const empty = document.getElementById('empty');
   const q = document.getElementById('q');
@@ -192,12 +193,14 @@
     send.disabled=true; typing();
     try{
       const r=await fetch(API+'/public/chat',{method:'POST',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:'sarva'})});
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:'sarva',history:history.slice(-8)})});
       document.getElementById('typing')?.remove();
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
       const data=await r.json();
       const models=(data.experts_used||[]).join(', ');
       bubble('sarva', fmt(data.answer||'(no answer)'), models?('via '+models):'');
+      history.push({role:'user',content:text},{role:'assistant',content:data.answer||''});
+      history=history.slice(-12);
     }catch(err){
       document.getElementById('typing')?.remove();
       bubble('err','Sorry — something went wrong. '+esc(err.message||'Please try again.'));
