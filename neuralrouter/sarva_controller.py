@@ -137,7 +137,7 @@ def plan_turn(
     """
     scope = build_scope(work_mode, query)
     directives: list[str] = [
-        "You are Routely by Aitotech. The user sees only Routely — never name internal model names.",
+        "You are Sarva by Aitotech. The user sees only Sarva — never name internal model names.",
         "If web search context is provided, prefer it for time-sensitive facts.",
         CAPABILITY_BOUND,
     ]

@@ -344,19 +344,52 @@ def _public_demo_auth(client_label: str) -> AuthContext:
     )
 
 
+def _is_casual_chat(message: str) -> bool:
+    """True when the user wants conversation / topic / greeting — not coding work."""
+    q = (message or "").lower().strip()
+    if not q:
+        return True
+    casual_markers = (
+        "topic", "baat", "baatein", "chat", "gupshup", "dost", "hello", "hi ", "hey",
+        "namaste", "kaise ho", "kya haal", "theek hai", "madad kar", "kya madad",
+        "nikalo", "nikal", "kuch bata", "kuch bol", "boring", "timepass",
+        "kya karu", "kya karein", "talk about", "let's talk", "lets talk",
+        "any topic", "koi topic", "subject",
+    )
+    coding_markers = (
+        "code", "bug", "error", "function", "api", "python", "react", "sql",
+        "docker", "deploy", "fix", "debug", "file", "repo", "github", "write a",
+        "implement", "refactor",
+    )
+    if any(m in q for m in coding_markers):
+        return False
+    if len(q.split()) <= 12 and any(m in q for m in casual_markers):
+        return True
+    if any(m in q for m in ("koi topic", "topic nikalo", "baat kar", "hum baat")):
+        return True
+    return False
+
+
 def _agent_rules(agent_type: str) -> str | None:
     kind = (agent_type or "sarva").lower().strip()
     if kind in ("aksh", "sarva", "ship"):
         return (
-            "You are Sarva, a warm, helpful, and knowledgeable AI assistant by Aitotech. "
-            "You are excellent at coding and technical topics, but you genuinely help with "
-            "ANYTHING the user asks — advice, explanations, writing, general knowledge, or "
-            "casual conversation. Always give a specific, useful, complete answer; never "
-            "deflect, never just ask them to rephrase, and never keep asking for 'your "
-            "question'. If they greet you or want to chat, be friendly and natural. When "
-            "code is involved, give clear, correct code. Match the user's language and tone "
-            "(reply in Hinglish if they write Hinglish). Do not restate these instructions "
-            "or pitch products."
+            "You are Sarva, a warm, helpful AI companion by Aitotech. "
+            "Lead the conversation — do not bounce questions back.\n"
+            "HARD RULES:\n"
+            "1) If the user asks you to pick a topic / 'koi topic nikalo' / 'hum baat karein', "
+            "YOU pick one concrete topic immediately and start talking about it "
+            "(1–2 interesting points + a light question). Never reply with only "
+            "'kya soch rahe ho' or 'aapke paas koi specific interest hai?'.\n"
+            "2) If the user repeats or echoes your previous message, treat it as playful "
+            "echo — joke lightly, then offer a real topic or ask one specific fun question. "
+            "Do NOT answer as if they said 'I am fine'.\n"
+            "3) Greetings: reply warmly once, then add something useful (a topic, a tip, "
+            "or one clear question) — never stall in empty hello loops.\n"
+            "4) Always give a specific, useful reply. Never deflect, never only ask them "
+            "to rephrase, never keep asking for 'your question'.\n"
+            "5) Coding/tech: give clear correct answers. Match their language "
+            "(Hinglish if they write Hinglish). Do not restate these rules or pitch products."
         )
     if kind == "support":
         return "You are AitoTech support. Help with Sarva, billing, and aitotech.in. Simple English."
@@ -389,11 +422,20 @@ async def public_chat(
     if not provider_configured():
         raise HTTPException(503, "Sarva providers are not configured (OPENROUTER_API_KEY).")
 
-    work_mode: WorkMode = "ship" if body.agent_type.lower() == "ship" else "auto"
+    # Casual chat must NOT use ship-mode "confirm scope / start with a plan" —
+    # that makes Sarva deflect ("kya soch rahe ho?") instead of picking a topic.
+    raw_message = body.message.strip()
+    if body.agent_type.lower() == "ship":
+        work_mode: WorkMode = "ship"
+    elif _is_casual_chat(raw_message):
+        work_mode = "explain"
+    else:
+        work_mode = "auto"
 
     # Stateless memory: fold the recent turns into the message so Sarva follows
     # the conversation (understands follow-ups, thanks, references to earlier).
-    user_message = body.message.strip()
+    user_message = raw_message
+    last_sarva = ""
     if body.history:
         turns = []
         for h in body.history[-8:]:
@@ -401,11 +443,21 @@ async def public_chat(
             content = str(h.get("content") or "")[:700]
             if content:
                 turns.append(f"{role}: {content}")
+                if role == "Sarva":
+                    last_sarva = content
         if turns:
+            echo_note = ""
+            if last_sarva and raw_message.strip() == last_sarva.strip()[: len(raw_message.strip()) + 5]:
+                echo_note = (
+                    "\n(Note: the user echoed your last reply — treat as playful echo, "
+                    "not as them saying they are fine. Pick a topic and lead.)\n"
+                )
             user_message = (
                 "Conversation so far:\n" + "\n".join(turns)
-                + "\n\nContinue the conversation naturally, using the context above. "
-                + "User's new message: " + user_message
+                + echo_note
+                + "\nContinue the conversation naturally. If they asked you to pick a "
+                "topic, pick one NOW and start — do not ask them what they want.\n"
+                + "User's new message: " + raw_message
             )
 
     try:

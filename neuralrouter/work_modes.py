@@ -45,9 +45,12 @@ def detect_work_mode(query: str, explicit: WorkMode = "auto") -> WorkMode:
 def build_scope(mode: WorkMode, query: str) -> WorkScope:
     resolved = detect_work_mode(query, mode)
     base = (
-        "You are Sarva by Sarva (Aitotech). The user sees only Sarva — never mention internal expert models.",
-        "Use simple, clear English unless the user writes in another language.",
-        "Confirm scope briefly when starting: what you will and will not change.",
+        "You are Sarva by Aitotech. The user sees only Sarva — never mention internal expert models.",
+        "Use simple, clear language; match the user's language (Hinglish OK).",
+        "Be decisive and helpful — lead with a concrete answer, do not only ask what they want.",
+    )
+    coding_base = base + (
+        "For coding tasks, briefly confirm what you will change before big edits.",
     )
 
     if resolved == "fix":
@@ -59,7 +62,7 @@ def build_scope(mode: WorkMode, query: str) -> WorkScope:
             allow_deploy=False,
             allow_search=True,
             collaborative=False,
-            system_directives=base
+            system_directives=coding_base
             + (
                 "SCOPE: Bug fix only. Do not add features or refactor unrelated code.",
                 "Prefer the smallest safe change. Mention files touched.",
@@ -74,7 +77,7 @@ def build_scope(mode: WorkMode, query: str) -> WorkScope:
             allow_deploy=False,
             allow_search=True,
             collaborative=False,
-            system_directives=base
+            system_directives=coding_base
             + (
                 "SCOPE: Additive changes only. Match existing project style and patterns.",
                 "Do not remove or rewrite unrelated modules.",
@@ -99,15 +102,16 @@ def build_scope(mode: WorkMode, query: str) -> WorkScope:
         return WorkScope(
             mode=resolved,
             label="Explain",
-            summary="Explain code and architecture — no edits.",
+            summary="Explain, teach, or chat helpfully — no code edits.",
             allow_write=False,
             allow_deploy=False,
             allow_search=False,
             collaborative=False,
             system_directives=base
             + (
-                "SCOPE: Read-only explanation. Do not propose large rewrites unless asked.",
-                "Use short sections and examples.",
+                "SCOPE: Conversation / explanation. No file edits.",
+                "If asked to pick a topic, pick one now and start — do not ask them to choose.",
+                "Keep replies concrete and engaging; avoid empty follow-up-only questions.",
             ),
         )
     if resolved == "deploy":
@@ -119,7 +123,7 @@ def build_scope(mode: WorkMode, query: str) -> WorkScope:
             allow_deploy=True,
             allow_search=True,
             collaborative=False,
-            system_directives=base
+            system_directives=coding_base
             + (
                 "SCOPE: Deployment only — Dockerfile, compose, env samples, deploy README.",
                 "Do not change business logic unless required for deployment.",
@@ -135,9 +139,10 @@ def build_scope(mode: WorkMode, query: str) -> WorkScope:
         allow_deploy=True,
         allow_search=True,
         collaborative=True,
-        system_directives=base
+        system_directives=coding_base
         + (
-            "SCOPE: Full delivery. Start with a short plan, then implement.",
+            "SCOPE: Full delivery. For coding asks, start with a short plan then implement.",
+            "For casual chat (greetings, 'pick a topic'), just talk — do not force a build plan.",
             "Prefer secure defaults: env vars for secrets, no keys in code.",
             "When deployment is requested, generate Docker artifacts and clear deploy steps.",
         ),
