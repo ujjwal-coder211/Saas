@@ -1,8 +1,8 @@
 {
   "model_id": "qwen",
-  "display_name": "Qwen Coder (free)",
+  "display_name": "GPT-4o-mini (reliable)",
   "provider": "OpenRouter",
-  "api_model_string": "qwen/qwen3-coder:free",
+  "api_model_string": "openai/gpt-4o-mini",
   "architecture_family": "Dense",
   "total_params_b": 32,
   "active_params_b": 32,
@@ -55,5 +55,5 @@
     "avg_temperature_used": 0.3,
     "tends_to": "working code first, minimal prose"
   },
-  "notes": "Routely default fallback — OpenRouter :free tier."
+  "notes": "Routely — reliable low-cost default/self-model + fallback. Paid, fast, always-up (~$0.15/$0.60 per M)."
 }
