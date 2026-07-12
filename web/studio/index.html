@@ -153,9 +153,9 @@
 
   <script>
     const LS_KEY = 'nr_key';
-    const LS_THREAD = 'aksh_active_thread';
-    const LS_SEARCH = 'aksh_search_mode';
-    const LS_WORK = 'aksh_work_mode';
+    const LS_THREAD = 'sarva_active_thread';
+    const LS_SEARCH = 'sarva_search_mode';
+    const LS_WORK = 'sarva_work_mode';
     let editor = null, activeTab = 'chat', inlineRange = null;
     let cloudProjectId = null, activeFile = 'README.md', fileCache = {};
     let threadId = localStorage.getItem(LS_THREAD) || null;
@@ -229,7 +229,7 @@
     }
     async function gitCommit() {
       if (!cloudProjectId) return alert('Select project');
-      const message = document.getElementById('commitMsg').value.trim() || 'Update from Aksh Studio';
+      const message = document.getElementById('commitMsg').value.trim() || 'Update from Sarva Studio';
       const res = await api('/v1/git/commit', { method: 'POST', body: JSON.stringify({ project_id: cloudProjectId, message }) });
       const data = await res.json();
       document.getElementById('gitOut').textContent = data.output || data.error || JSON.stringify(data);
@@ -289,7 +289,7 @@
       addMsg('user', '[Composer] ' + q);
       const res = await api('/v1/composer/run', {
         method: 'POST',
-        body: JSON.stringify({ task: q, project_id: cloudProjectId, rules: fileCache['.akshrules'] || '' }),
+        body: JSON.stringify({ task: q, project_id: cloudProjectId, rules: fileCache['.sarvarules'] || '' }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
@@ -484,7 +484,7 @@
       if (document.getElementById('attachFile').checked && activeFile) {
         file_context = 'File: ' + activeFile + '\n```\n' + (fileCache[activeFile] || '') + '\n```';
       }
-      const rules = fileCache['.akshrules'] || '';
+      const rules = fileCache['.sarvarules'] || '';
       try {
         if (activeTab === 'composer') {
           await runComposerTask(q);
@@ -510,7 +510,7 @@
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
     require(['vs/editor/editor.main'], function () {
       editor = monaco.editor.create(document.getElementById('editor'), {
-        value: '# Aksh Studio\n', language: 'markdown', theme: 'vs-dark', automaticLayout: true,
+        value: '# Sarva Studio\n', language: 'markdown', theme: 'vs-dark', automaticLayout: true,
       });
       editor.onDidChangeModelContent(() => saveFileDebounced());
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => openInline());

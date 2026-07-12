@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aksh — Dashboard | Aitotech</title>
+  <title>Sarva — Dashboard | Aitotech</title>
   <style>
     :root { --bg:#0f1419; --card:#1a2332; --text:#e7ecf3; --muted:#8b9cb3; --accent:#3b82f6; --ok:#22c55e; }
     * { box-sizing: border-box; }
@@ -23,7 +23,7 @@
   </style>
 </head>
 <body>
-  <h1>Aksh Dashboard</h1>
+  <h1>Sarva Dashboard</h1>
   <p class="sub">Sarva · API keys · usage · skills · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/chat.html">Chat</a> · <a href="/web/studio/">Studio</a></p>
 
   <div class="grid">
@@ -78,7 +78,7 @@
     </div>
 
     <div class="card">
-      <h2>Aksh Search</h2>
+      <h2>Sarva Search</h2>
       <div class="stat" id="searchStatus" style="font-size:1.1rem">—</div>
       <p class="sub" id="searchMeta">Provider &amp; API key status from /health</p>
       <button class="secondary" onclick="loadSearch()">Refresh search</button>
@@ -210,7 +210,7 @@
         document.getElementById('searchMeta').textContent =
           'provider=' + (s.provider || '?') + ' · api_key=' + (s.api_key_configured ? 'set' : 'missing');
         if (!s.api_key_configured) {
-          document.getElementById('searchMeta').innerHTML += '<br><span class="ok">Chat works without search — set AKSH_SEARCH_API_KEY in .env</span>';
+          document.getElementById('searchMeta').innerHTML += '<br><span class="ok">Chat works without search — set SARVA_SEARCH_API_KEY in .env</span>';
         }
       } catch (e) {
         document.getElementById('searchMeta').textContent = 'Error: ' + e.message;
