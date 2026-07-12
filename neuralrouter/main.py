@@ -147,7 +147,7 @@ class OpenAIChatRequest(BaseModel):
 
 class PublicChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
-    agent_type: str = Field(default="sales", max_length=32)
+    agent_type: str = Field(default="sarva", max_length=32)
 
 
 class FeedbackRequest(BaseModel):
