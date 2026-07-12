@@ -1,23 +1,59 @@
 {
   "model_id": "kimi",
-  "display_name": "Llama 3.3 (free)",
+  "display_name": "GPT-4o-mini (long/general)",
   "provider": "OpenRouter",
-  "api_model_string": "meta-llama/llama-3.3-70b-instruct:free",
+  "api_model_string": "openai/gpt-4o-mini",
   "architecture_family": "Dense",
   "total_params_b": 70,
   "active_params_b": 70,
   "context_window": 128000,
   "max_tokens": 4096,
-  "specialty_domains": ["agent tasks", "git", "multi-step coding"],
+  "specialty_domains": [
+    "agent tasks",
+    "git",
+    "multi-step coding"
+  ],
   "sub_experts": [
-    {"id": "agent-expert", "name": "Agent Workflow", "keywords": ["agent", "workflow", "automate", "multi-step", "task"]},
-    {"id": "git-expert", "name": "Git", "keywords": ["git", "pull", "push", "commit", "merge", "branch", "rebase"]},
-    {"id": "planning-expert", "name": "Plan & Ship", "keywords": ["plan", "roadmap", "step by step", "ship", "deploy"]}
+    {
+      "id": "agent-expert",
+      "name": "Agent Workflow",
+      "keywords": [
+        "agent",
+        "workflow",
+        "automate",
+        "multi-step",
+        "task"
+      ]
+    },
+    {
+      "id": "git-expert",
+      "name": "Git",
+      "keywords": [
+        "git",
+        "pull",
+        "push",
+        "commit",
+        "merge",
+        "branch",
+        "rebase"
+      ]
+    },
+    {
+      "id": "planning-expert",
+      "name": "Plan & Ship",
+      "keywords": [
+        "plan",
+        "roadmap",
+        "step by step",
+        "ship",
+        "deploy"
+      ]
+    }
   ],
   "response_style": {
     "typical_format": "structured steps then code",
     "avg_temperature_used": 0.4,
     "tends_to": "break tasks into steps, actionable commands"
   },
-  "notes": "Routely — git and agent workflow routing slot."
+  "notes": "Routely — reliable long-context/general slot (~$0.15/$0.60 per M)."
 }

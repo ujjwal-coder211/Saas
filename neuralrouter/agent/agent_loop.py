@@ -175,10 +175,7 @@ async def run_agent_loop(
     synth_input = _synthesize_prompt(task, steps, scope)
     answer = await llm_plan([{"role": "user", "content": synth_input}])
 
-    prefix = f"{scope_confirmation(scope)}\n\n"
-    if not answer.startswith("["):
-        answer = prefix + answer
-
+    # Work-mode banner removed from user-facing answers (kept internal only).
     return AgentResult(
         answer=answer,
         steps=steps,

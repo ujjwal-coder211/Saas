@@ -1,8 +1,8 @@
 {
   "model_id": "glm",
-  "display_name": "Gemma 3 (free)",
+  "display_name": "DeepSeek Chat (reasoning)",
   "provider": "OpenRouter",
-  "api_model_string": "google/gemma-4-31b-it:free",
+  "api_model_string": "deepseek/deepseek-chat",
   "architecture_family": "Dense",
   "total_params_b": 27,
   "active_params_b": 27,
@@ -51,5 +51,5 @@
     "avg_temperature_used": 0.3,
     "tends_to": "consider cross-file impact before changing code"
   },
-  "notes": "Routely — refactor and repo-level routing slot."
+  "notes": "Routely — reasoning/general slot. Paid, reliable (~$0.20/$0.80 per M)."
 }

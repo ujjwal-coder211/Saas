@@ -262,7 +262,6 @@ async def run_chat(
     except Exception:
         logger.debug("RLEF logging skipped", exc_info=True)
 
-    scope = build_scope(work_mode, message)
-    if scope.mode != "auto" and not result.answer.startswith("[Aksh"):
-        result.answer = f"{scope_confirmation(scope)}\n\n{result.answer}"
+    # Work-mode banner (e.g. "[Aksh Ship] ...") removed from user-facing answers —
+    # it read as noise. Mode still drives routing/rules internally.
     return result
