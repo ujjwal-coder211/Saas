@@ -1,4 +1,4 @@
-"""Aksh work modes — scope-locked professional behavior for Sarva and Agent."""
+"""Sarva work modes — scope-locked professional behavior for Sarva and Agent."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def detect_work_mode(query: str, explicit: WorkMode = "auto") -> WorkMode:
 def build_scope(mode: WorkMode, query: str) -> WorkScope:
     resolved = detect_work_mode(query, mode)
     base = (
-        "You are Sarva by Aksh (Aitotech). The user sees only Sarva — never mention internal expert models.",
+        "You are Sarva by Sarva (Aitotech). The user sees only Sarva — never mention internal expert models.",
         "Use simple, clear English unless the user writes in another language.",
         "Confirm scope briefly when starting: what you will and will not change.",
     )
@@ -159,4 +159,4 @@ def routing_query_boost(query: str, scope: WorkScope) -> str:
 
 
 def scope_confirmation(scope: WorkScope) -> str:
-    return f"[Aksh {scope.label}] {scope.summary}"
+    return f"[Sarva {scope.label}] {scope.summary}"

@@ -1,231 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sarva — Dashboard | Aitotech</title>
-  <style>
-    :root { --bg:#0f1419; --card:#1a2332; --text:#e7ecf3; --muted:#8b9cb3; --accent:#3b82f6; --ok:#22c55e; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
-    h1 { font-size: 1.4rem; margin: 0 0 8px; }
-    .sub { color: var(--muted); margin-bottom: 24px; }
-    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid #2a3548; }
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
-    input, button { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: var(--text); }
-    button { background: var(--accent); border: none; cursor: pointer; font-weight: 600; margin-top: 8px; }
-    button.secondary { background: #334155; }
-    .stat { font-size: 1.8rem; font-weight: 700; }
-    .ok { color: var(--ok); }
-    pre { background: #0f172a; padding: 12px; border-radius: 8px; overflow: auto; font-size: 0.75rem; max-height: 240px; }
-    a { color: var(--accent); }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sarva — Dashboard | Aitotech</title>
+<style>
+  :root{--bg:#0a0c12;--panel:#111420;--panel-2:#161a2a;--border:#232841;
+    --text:#e8ecf5;--muted:#8b93ad;--accent:#4f7cff;--accent-2:#7a5cff;--ok:#3ddc84}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:radial-gradient(1000px 500px at 50% -10%,#141a33 0,var(--bg) 55%);color:var(--text);min-height:100vh}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .container{max-width:1000px;margin:0 auto;padding:26px 22px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
+  .brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;font-size:16px}
+  nav a{color:var(--muted);margin-left:18px;font-size:14px}
+  .sub{color:var(--muted);font-size:14px;margin:2px 0 26px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px}
+  .card h3{font-size:16px;margin-bottom:4px}
+  .card .desc{color:var(--muted);font-size:13px;margin-bottom:16px}
+  label{display:block;color:var(--muted);font-size:12px;margin:12px 0 5px}
+  input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    padding:11px 12px;color:var(--text);font-size:14px;outline:none}
+  input:focus{border-color:var(--accent)}
+  .btn{display:block;width:100%;margin-top:14px;padding:11px;border-radius:11px;border:none;cursor:pointer;font-weight:600;font-size:14px}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:var(--panel-2);border:1px solid var(--border);color:var(--text)}
+  .btn.ghost:hover{border-color:var(--accent)}
+  .big{font-size:30px;font-weight:800;margin:6px 0}
+  .muted{color:var(--muted);font-size:13px}
+  .ok{color:var(--ok)} .err{color:#ff9db0}
+  code{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
+  pre{background:#0a0c14;border:1px solid var(--border);border-radius:10px;padding:12px;overflow-x:auto;font-size:12px;color:#cdd6f4;margin-top:8px}
+  .msg{font-size:13px;margin-top:10px;min-height:16px}
+</style>
 </head>
 <body>
-  <h1>Sarva Dashboard</h1>
-  <p class="sub">Sarva · API keys · usage · skills · <a href="/web/index.html">Home</a> · <a href="/web/docs/">Docs</a> · <a href="/web/chat.html">Chat</a> · <a href="/web/studio/">Studio</a></p>
+  <div class="container">
+    <header>
+      <div class="brand"><span class="mark">⚡</span> Sarva Dashboard</div>
+      <nav>
+        <a href="/web/index.html">Home</a>
+        <a href="/web/chat.html">Chat</a>
+        <a href="/web/studio/">Studio</a>
+        <a href="/web/docs/">Docs</a>
+      </nav>
+    </header>
+    <div class="sub">Manage your account, usage, and API access · <span id="plan" class="muted">Plan: —</span></div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Connect</h2>
-      <label>API Base URL</label>
-      <input id="baseUrl" value="" />
-      <label>API Key (Bearer)</label>
-      <input id="apiKey" type="password" placeholder="sk_live_..." />
-      <button onclick="saveAndLoad()">Save &amp; Load usage</button>
-    </div>
+    <div class="grid">
+      <!-- Create account -->
+      <div class="card">
+        <h3>Create your free account</h3>
+        <div class="desc">Sign up to get an API key and start using Sarva.</div>
+        <label>Email</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+        <button class="btn primary" onclick="signup()">Create free account</button>
+        <div class="msg" id="signupMsg"></div>
+      </div>
 
-    <div class="card">
-      <h2>Signup (MVP)</h2>
-      <label>Email</label>
-      <input id="signupEmail" type="email" placeholder="dev@example.com" />
-      <button onclick="signup()">Create free account</button>
-      <p id="signupMsg" class="sub"></p>
-    </div>
+      <!-- Usage -->
+      <div class="card">
+        <h3>Usage this month</h3>
+        <div class="desc">Tokens and requests on your current plan.</div>
+        <div class="big" id="tokens">—</div>
+        <div class="muted" id="usageMeta">Enter your API key below and load usage.</div>
+        <button class="btn ghost" onclick="loadUsage()">Refresh usage</button>
+      </div>
 
-    <div class="card">
-      <h2>Usage this month</h2>
-      <div class="stat" id="tokensUsed">—</div>
-      <p class="sub" id="planInfo">Plan: —</p>
-      <button class="secondary" onclick="loadUsage()">Refresh</button>
-      <button onclick="upgradePro()">Upgrade to Pro (Stripe)</button>
-    </div>
+      <!-- Plan / upgrade -->
+      <div class="card">
+        <h3>Your plan</h3>
+        <div class="desc">Upgrade for higher limits, memory, and agent workflows.</div>
+        <div class="big" id="planName">Free</div>
+        <div class="muted">50K tokens/mo · free models</div>
+        <button class="btn primary" onclick="upgrade()">Upgrade to Pro</button>
+      </div>
 
-    <div class="card">
-      <h2>Training opt-in (Sarva)</h2>
-      <p class="sub">Default OFF — your data stays private.</p>
-      <button class="secondary" onclick="setOptIn(true)">Enable opt-in</button>
-      <button class="secondary" onclick="setOptIn(false)">Disable opt-in</button>
-    </div>
-
-    <div class="card">
-      <h2>Add Skill / MCP → Sarva train</h2>
-      <label>Skill name</label>
-      <input id="skillName" placeholder="my-mcp-server" />
-      <label>Git URL (public repo)</label>
-      <input id="skillGit" placeholder="https://github.com/org/skill-repo" />
-      <button onclick="registerSkill()">Add &amp; ingest for training</button>
-      <p id="skillMsg" class="sub"></p>
-      <p class="sub">Pipeline: <code>scripts/run_pipeline.ps1</code> → Colab → <code>brain_register.py</code></p>
-    </div>
-
-    <div class="card">
-      <h2>Sarva Brain (active)</h2>
-      <div class="stat" id="brainVersion" style="font-size:1.1rem">—</div>
-      <p class="sub" id="brainMeta">Load with API key</p>
-      <button class="secondary" onclick="loadBrain()">Refresh brain</button>
-    </div>
-
-    <div class="card">
-      <h2>Sarva Search</h2>
-      <div class="stat" id="searchStatus" style="font-size:1.1rem">—</div>
-      <p class="sub" id="searchMeta">Provider &amp; API key status from /health</p>
-      <button class="secondary" onclick="loadSearch()">Refresh search</button>
+      <!-- API access -->
+      <div class="card">
+        <h3>API access</h3>
+        <div class="desc">Use Sarva from Cursor, Continue, or any OpenAI-compatible client.</div>
+        <label>Your API key</label>
+        <input id="apiKey" type="password" placeholder="sk_… (from signup)" />
+        <button class="btn ghost" onclick="saveKey()">Save key</button>
+        <div style="margin-top:14px">
+          <div class="muted">Base URL &amp; model</div>
+          <pre id="connect"></pre>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:16px">
-    <h2>Recent requests</h2>
-    <pre id="recent">Load usage to see data.</pre>
-  </div>
+<script>
+  const API=window.location.origin;
+  const $=id=>document.getElementById(id);
+  document.getElementById('connect').textContent =
+    'Base URL:  '+API+'/v1\nModel:     sarva\nAuth:      Authorization: Bearer <your key>';
 
-  <script>
-    const base = () => document.getElementById('baseUrl').value.replace(/\/$/, '');
-    const key = () => document.getElementById('apiKey').value.trim();
+  function key(){ return $('apiKey').value.trim() || localStorage.getItem('sarva_key') || ''; }
+  function saveKey(){ localStorage.setItem('sarva_key', $('apiKey').value.trim()); loadUsage(); }
+  $('apiKey').value = localStorage.getItem('sarva_key') || '';
 
-    document.getElementById('baseUrl').value = window.location.origin;
-
-    function saveAndLoad() {
-      localStorage.setItem('nr_base', base());
-      localStorage.setItem('nr_key', key());
+  async function signup(){
+    const email=$('email').value.trim();
+    if(!email){ $('signupMsg').innerHTML='<span class="err">Enter your email.</span>'; return; }
+    try{
+      const r=await fetch(API+'/saas/v1/signup',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,plan_id:'free'})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(typeof d.detail==='string'?d.detail:'Sign-up unavailable');
+      $('apiKey').value=d.api_key||''; localStorage.setItem('sarva_key',d.api_key||'');
+      $('signupMsg').innerHTML='<span class="ok">Account created — API key saved. Copy it now!</span>';
       loadUsage();
-    }
+    }catch(e){ $('signupMsg').innerHTML='<span class="err">'+e.message+'</span>'; }
+  }
 
-    async function api(path, opts = {}) {
-      const r = await fetch(base() + path, {
-        ...opts,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + key(),
-          ...(opts.headers || {}),
-        },
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
-      return data;
-    }
+  async function loadUsage(){
+    if(!key()){ $('usageMeta').textContent='Enter your API key below and load usage.'; return; }
+    try{
+      const r=await fetch(API+'/saas/v1/usage',{headers:{Authorization:'Bearer '+key()}});
+      const u=await r.json(); if(!r.ok) throw new Error(u.detail||'Could not load usage');
+      $('tokens').textContent=(u.tokens_used||0).toLocaleString()+(u.tokens_limit?' / '+u.tokens_limit.toLocaleString():'');
+      $('usageMeta').textContent='Requests: '+(u.requests_count||0)+' · Cost: $'+(u.estimated_cost_usd||0);
+      $('planName').textContent=u.plan_name||u.plan_id||'Free';
+      $('plan').textContent='Plan: '+(u.plan_name||u.plan_id||'Free');
+    }catch(e){ $('usageMeta').innerHTML='<span class="err">'+e.message+'</span>'; }
+  }
 
-    async function loadUsage() {
-      try {
-        const u = await api('/saas/v1/usage');
-        document.getElementById('tokensUsed').textContent =
-          (u.tokens_used || 0).toLocaleString() +
-          (u.tokens_limit ? ' / ' + u.tokens_limit.toLocaleString() : '');
-        document.getElementById('planInfo').textContent =
-          'Plan: ' + (u.plan_name || u.plan_id) + ' · Requests: ' + (u.requests_count || 0);
-        document.getElementById('recent').textContent = JSON.stringify(u.recent_events || [], null, 2);
-      } catch (e) {
-        document.getElementById('recent').textContent = 'Error: ' + e.message;
-      }
-    }
+  async function upgrade(){
+    if(!key()){ alert('Create an account or enter your API key first.'); return; }
+    try{
+      const r=await fetch(API+'/saas/v1/checkout-session?plan_id=pro',{method:'POST',headers:{Authorization:'Bearer '+key()}});
+      const d=await r.json(); if(!r.ok) throw new Error(d.detail||'Checkout unavailable');
+      if(d.checkout_url) window.location.href=d.checkout_url;
+    }catch(e){ alert('Upgrade: '+e.message); }
+  }
 
-    async function signup() {
-      const email = document.getElementById('signupEmail').value;
-      try {
-        const r = await fetch(base() + '/saas/v1/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, plan_id: 'free' }),
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
-        document.getElementById('apiKey').value = data.api_key;
-        document.getElementById('signupMsg').innerHTML =
-          '<span class="ok">Account created. API key saved above — copy now!</span>';
-        saveAndLoad();
-      } catch (e) {
-        document.getElementById('signupMsg').textContent = e.message;
-      }
-    }
-
-    async function upgradePro() {
-      try {
-        const data = await api('/saas/v1/checkout-session?plan_id=pro', { method: 'POST' });
-        window.location.href = data.checkout_url;
-      } catch (e) {
-        alert('Stripe checkout: ' + e.message);
-      }
-    }
-
-    async function registerSkill() {
-      const name = document.getElementById('skillName').value.trim();
-      const git_url = document.getElementById('skillGit').value.trim();
-      if (!name || !git_url) {
-        document.getElementById('skillMsg').textContent = 'Name and Git URL required';
-        return;
-      }
-      try {
-        const data = await api('/saas/v1/skills/register', {
-          method: 'POST',
-          body: JSON.stringify({ name, git_url, skill_type: 'mcp' }),
-        });
-        document.getElementById('skillMsg').innerHTML =
-          '<span class="ok">Ingested: ' + data.training_rows_written + ' training rows. Run curate → build_dataset.</span>';
-      } catch (e) {
-        document.getElementById('skillMsg').textContent = e.message;
-      }
-    }
-
-    async function setOptIn(enabled) {
-      try {
-        await api('/saas/v1/training-opt-in', {
-          method: 'PATCH',
-          body: JSON.stringify({ enabled }),
-        });
-        alert('Training opt-in: ' + enabled);
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    async function loadBrain() {
-      try {
-        const data = await api('/v1/sarva/brain');
-        const active = data.active || {};
-        document.getElementById('brainVersion').textContent = active.version_id || data.active_version_id || '—';
-        document.getElementById('brainMeta').textContent =
-          (active.label || 'Sarva') + ' · type=' + (active.type || '?') + ' · updated ' + (data.updated_at || '');
-      } catch (e) {
-        document.getElementById('brainMeta').textContent = 'Error: ' + e.message;
-      }
-    }
-
-    async function loadSearch() {
-      try {
-        const r = await fetch(base() + '/health');
-        const data = await r.json();
-        const s = data.search || {};
-        document.getElementById('searchStatus').textContent = s.ready ? 'Ready' : (s.enabled ? 'Enabled (no key)' : 'Disabled');
-        document.getElementById('searchMeta').textContent =
-          'provider=' + (s.provider || '?') + ' · api_key=' + (s.api_key_configured ? 'set' : 'missing');
-        if (!s.api_key_configured) {
-          document.getElementById('searchMeta').innerHTML += '<br><span class="ok">Chat works without search — set SARVA_SEARCH_API_KEY in .env</span>';
-        }
-      } catch (e) {
-        document.getElementById('searchMeta').textContent = 'Error: ' + e.message;
-      }
-    }
-
-    const savedBase = localStorage.getItem('nr_base');
-    const savedKey = localStorage.getItem('nr_key');
-    if (savedBase) document.getElementById('baseUrl').value = savedBase;
-    if (savedKey) {
-      document.getElementById('apiKey').value = savedKey;
-      loadUsage();
-      loadBrain();
-      loadSearch();
-    }
-  </script>
+  if(key()) loadUsage();
+</script>
 </body>
 </html>

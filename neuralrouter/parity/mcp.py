@@ -1,4 +1,4 @@
-"""MCP runtime — bridge registered MCP tool definitions to Aksh agent."""
+"""MCP runtime — bridge registered MCP tool definitions to Sarva agent."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def load_project_mcp_config(user_id: str, project_id: str) -> list[dict[str, Any
 
 
 def list_mcp_tools(user_id: str, project_id: str) -> list[dict[str, Any]]:
-    """List tools from project MCP config + built-in Aksh tools."""
+    """List tools from project MCP config + built-in Sarva tools."""
     servers = load_project_mcp_config(user_id, project_id)
     tools: list[dict[str, Any]] = []
     for srv in servers:
@@ -61,7 +61,7 @@ def invoke_mcp_tool(
     run_tool_fn: Any,
 ) -> dict[str, Any]:
     """
-    MCP tool dispatch. Built-in Aksh tools run immediately.
+    MCP tool dispatch. Built-in Sarva tools run immediately.
     External MCP servers: config must exist; returns guidance until full stdio bridge is configured.
     """
     if tool_name in ("read_file", "write_file", "grep", "list_files", "run_terminal", "security_scan"):
@@ -76,7 +76,7 @@ def invoke_mcp_tool(
                 "message": (
                     f"MCP server '{srv['id']}' is registered. "
                     "Full stdio MCP execution requires AKSH_MCP_ENABLE=true on server. "
-                    "Use built-in Aksh tools for file/terminal operations today."
+                    "Use built-in Sarva tools for file/terminal operations today."
                 ),
                 "config_keys": list(srv.get("config", {}).keys()),
             }

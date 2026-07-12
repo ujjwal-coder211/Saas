@@ -30,7 +30,7 @@ from neuralrouter.work_modes import WorkMode, build_scope, scope_confirmation
 logger = logging.getLogger(__name__)
 
 SearchMode = Literal["auto", "on", "off"]
-PUBLIC_MODEL_ID = "routely"
+PUBLIC_MODEL_ID = "sarva"
 
 
 @dataclass
@@ -234,7 +234,7 @@ async def run_chat(
             search_result = await aksh_search(message)
             plan = apply_search_context(plan, search_result)
         except Exception:
-            logger.exception("Aksh Search failed — continuing without web context")
+            logger.exception("Sarva Search failed — continuing without web context")
 
     result = await _run_with_plan(plan)
 
@@ -262,6 +262,6 @@ async def run_chat(
     except Exception:
         logger.debug("RLEF logging skipped", exc_info=True)
 
-    # Work-mode banner (e.g. "[Aksh Ship] ...") removed from user-facing answers —
+    # Work-mode banner (e.g. "[Sarva Ship] ...") removed from user-facing answers —
     # it read as noise. Mode still drives routing/rules internally.
     return result

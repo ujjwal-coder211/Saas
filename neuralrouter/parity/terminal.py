@@ -1,4 +1,4 @@
-"""Sandboxed terminal commands for Aksh Agent (project-scoped)."""
+"""Sandboxed terminal commands for Sarva Agent (project-scoped)."""
 
 from __future__ import annotations
 

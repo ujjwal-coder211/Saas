@@ -1,4 +1,4 @@
-"""System tools for Aksh Agent (Harness) — paper §4.2.3.
+"""System tools for Sarva Agent (Harness) — paper §4.2.3.
 
 open_app, manage_clipboard, notify, screenshot_region. These touch the host OS, so
 they only work on a desktop session; on a headless server each returns a clean

@@ -222,7 +222,7 @@ async def background_agent(
 
     async def llm_plan(messages: list[dict]) -> str:
         text = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        result = await call_model(text, "qwen", system_prompt="You are Aksh Agent.")
+        result = await call_model(text, "qwen", system_prompt="You are Sarva Agent.")
         return result.get("content", "")
 
     async def work():

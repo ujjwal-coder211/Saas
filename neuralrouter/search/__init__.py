@@ -1,4 +1,4 @@
-"""Aksh Search module."""
+"""Sarva Search module."""
 
 from neuralrouter.search.web_search import (
     AKSH_SEARCH_API_KEY,

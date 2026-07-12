@@ -15,13 +15,13 @@
   <h1>Connect Cursor to Sarva (Sarva)</h1>
   <ol>
     <li>Cursor → Settings → Models → OpenAI-compatible</li>
-    <li>Base URL: <code>https://api.sarva.aitotech.in/v1</code> (local: <code>http://127.0.0.1:8000/v1</code>)</li>
+    <li>Base URL: <code>https://aitotech-neuralrouter-production.up.railway.app/v1</code> (local: <code>https://aitotech-neuralrouter-production.up.railway.app/v1</code>)</li>
     <li>API Key: Dashboard se copy karo</li>
     <li>Model name: <code>sarva</code> (ya <code>auto</code> — same routing)</li>
   </ol>
   <p>User ko sirf <strong>Sarva</strong> dikhega. Backend experts hidden hain.</p>
   <h2>Test</h2>
-  <pre>curl -X POST http://127.0.0.1:8000/v1/chat/completions \
+  <pre>curl -X POST https://aitotech-neuralrouter-production.up.railway.app/v1/chat/completions \
   -H "Authorization: Bearer YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"sarva","messages":[{"role":"user","content":"Hello"}]}'</pre>

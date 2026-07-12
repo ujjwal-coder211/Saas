@@ -1,4 +1,4 @@
-"""Aksh Agent loop — plan → tool calls → synthesize (max 8 steps)."""
+"""Sarva Agent loop — plan → tool calls → synthesize (max 8 steps)."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def _plan_prompt(task: str, file_context: str, rules: str, scope: WorkScope) -> 
     rules_block = rules.strip() or "(no .akshrules)"
     tool_list = ", ".join(ALLOWED_TOOLS)
     return (
-        "You are Aksh Agent (Sarva). Break the task into small steps.\n"
+        "You are Sarva Agent (Sarva). Break the task into small steps.\n"
         f"{scope_confirmation(scope)}\n\n"
         "To call a tool, emit exactly one block:\n"
         "```tool\n"

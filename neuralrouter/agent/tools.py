@@ -1,4 +1,4 @@
-"""Aksh Agent — sandboxed file tools for autonomous coding tasks."""
+"""Sarva Agent — sandboxed file tools for autonomous coding tasks."""
 
 from __future__ import annotations
 
@@ -190,7 +190,7 @@ def run_tool(
     if name == "git_diff":
         return git_diff(project_root, args.get("path", "."))
     if name == "git_commit":
-        return git_commit(project_root, args.get("message", "Aksh agent commit"))
+        return git_commit(project_root, args.get("message", "Sarva agent commit"))
 
     # Browser tools (Harness §4.2.2)
     if name == "browser_open":

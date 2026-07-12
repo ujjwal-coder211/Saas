@@ -31,7 +31,7 @@ async def review_project(
     review_text = ""
     if provider_configured() and snippets:
         prompt = (
-            f"You are Aksh Bugbot (Sarva). Review this project for: {focus}.\n"
+            f"You are Sarva Bugbot (Sarva). Review this project for: {focus}.\n"
             "Format: numbered findings with severity (critical/high/medium/low), file, issue, fix.\n\n"
             + "\n\n".join(snippets[:10])
         )

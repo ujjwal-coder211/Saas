@@ -183,7 +183,7 @@ def _resolve_force_model(model: str) -> Optional[str]:
         "auto",
         "sarva",
         "sarva",
-        "aksh-sarva",
+        "sarva-v1",
         "neuralrouter-auto",
         "default",
         "gpt-4",
@@ -596,7 +596,7 @@ async def agent_run(
     body: AgentRunRequest,
     auth: Annotated[AuthContext, Depends(verify_auth)],
 ):
-    """Aksh Agent — plan → tools → synthesize on cloud project or enterprise path."""
+    """Sarva Agent — plan → tools → synthesize on cloud project or enterprise path."""
     rate_limit(request, auth)
     from pathlib import Path
 
@@ -634,7 +634,7 @@ async def agent_run(
         result = await call_model(
             text,
             "qwen",
-            system_prompt="You are Aksh Agent powered by Sarva. Follow work mode scope strictly.",
+            system_prompt="You are Sarva Agent powered by Sarva. Follow work mode scope strictly.",
         )
         return result.get("content", "")
 

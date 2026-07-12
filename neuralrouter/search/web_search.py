@@ -1,5 +1,5 @@
 """
-Aksh Search — fetch latest information from the internet.
+Sarva Search — fetch latest information from the internet.
 
 Set AKSH_SEARCH_API_KEY + AKSH_SEARCH_PROVIDER (tavily|serper|brave).
 Sarva Controller calls this when query needs fresh data.
@@ -41,7 +41,7 @@ class SearchResult:
     def as_context_block(self) -> str:
         if not self.snippets:
             return ""
-        lines = ["## Aksh Search (latest web context)", ""]
+        lines = ["## Sarva Search (latest web context)", ""]
         for i, (snip, src) in enumerate(zip(self.snippets, self.sources), 1):
             lines.append(f"{i}. {snip}")
             if src:

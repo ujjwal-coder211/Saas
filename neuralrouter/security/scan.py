@@ -1,4 +1,4 @@
-"""Basic security scan for Aksh cloud projects — secrets, risky patterns, env leaks."""
+"""Basic security scan for Sarva cloud projects — secrets, risky patterns, env leaks."""
 
 from __future__ import annotations
 

@@ -28,7 +28,7 @@ def ensure_git_repo(root: Path) -> None:
     if not (root / ".git").exists():
         _run_git(root, "init")
         _run_git(root, "config", "user.email", "aksh@aitotech.in")
-        _run_git(root, "config", "user.name", "Aksh Studio")
+        _run_git(root, "config", "user.name", "Sarva Studio")
 
 
 def git_status(root: Path | None) -> dict[str, Any]:

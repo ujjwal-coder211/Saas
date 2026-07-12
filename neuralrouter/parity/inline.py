@@ -60,7 +60,7 @@ async def tab_complete(
         f"Cursor at line {line}, column {column}.\n"
         f"Text before cursor on current line: ...{prefix[-80:]}\n\n"
         f"Context:\n```\n{context}\n```\n\n"
-        "Suggest the next characters to insert at the cursor (Aksh Tab). "
+        "Suggest the next characters to insert at the cursor (Sarva Tab). "
         "Return ONLY the completion suffix (what comes after the prefix), max 120 chars. "
         "If nothing useful, return empty string."
     )

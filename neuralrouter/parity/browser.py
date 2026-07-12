@@ -1,4 +1,4 @@
-"""Browser tools for Aksh Agent (Harness) — Chrome DevTools Protocol via Playwright.
+"""Browser tools for Sarva Agent (Harness) — Chrome DevTools Protocol via Playwright.
 
 Implements the paper's §4.2.2 browser tool taxonomy: open, click, type, extract,
 screenshot, wait, navigate, execute. A single Chromium session is kept alive in a

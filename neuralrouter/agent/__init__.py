@@ -1,4 +1,4 @@
-"""Aksh Agent package."""
+"""Sarva Agent package."""
 
 from neuralrouter.agent.agent_loop import run_agent_loop
 from neuralrouter.agent.tools import ALLOWED_TOOLS, run_tool
