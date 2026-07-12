@@ -1,8 +1,8 @@
 {
   "model_id": "glm",
-  "display_name": "DeepSeek Chat (reasoning)",
-  "provider": "OpenRouter",
-  "api_model_string": "deepseek/deepseek-chat",
+  "display_name": "Nemotron 70B (NVIDIA NIM, free)",
+  "provider": "NVIDIA NIM",
+  "api_model_string": "nvidia/llama-3.1-nemotron-70b-instruct",
   "architecture_family": "Dense",
   "total_params_b": 27,
   "active_params_b": 27,
@@ -51,5 +51,5 @@
     "avg_temperature_used": 0.3,
     "tends_to": "consider cross-file impact before changing code"
   },
-  "notes": "Routely — reasoning/general slot. Paid, reliable (~$0.20/$0.80 per M)."
+  "notes": "Routely — reasoning slot via NVIDIA NIM (free). Falls back to OpenRouter on failure."
 }

@@ -1,8 +1,8 @@
 {
   "model_id": "kimi",
-  "display_name": "GPT-4o-mini (long/general)",
-  "provider": "OpenRouter",
-  "api_model_string": "openai/gpt-4o-mini",
+  "display_name": "Llama 3.1 8B (NVIDIA NIM, free)",
+  "provider": "NVIDIA NIM",
+  "api_model_string": "meta/llama-3.1-8b-instruct",
   "architecture_family": "Dense",
   "total_params_b": 70,
   "active_params_b": 70,
@@ -55,5 +55,5 @@
     "avg_temperature_used": 0.4,
     "tends_to": "break tasks into steps, actionable commands"
   },
-  "notes": "Routely — reliable long-context/general slot (~$0.15/$0.60 per M)."
+  "notes": "Routely — fast general slot via NVIDIA NIM (free)."
 }
