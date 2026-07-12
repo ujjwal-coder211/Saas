@@ -174,7 +174,7 @@
     q.value='';q.style.height='auto'; bubble('user',esc(text)); saveTurn('user',text);
     send.disabled=true; typing();
     try{
-      const r=await fetch(API+'/public/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:(mode==='agent'?'sarva':'')})});
+      const r=await fetch(API+'/public/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:(mode==='agent'?'ship':'sarva')})});
       document.getElementById('typing')?.remove();
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
       const d=await r.json(); bubble('sarva',fmt(d.answer||'(no answer)')); saveTurn('sarva',d.answer||'');

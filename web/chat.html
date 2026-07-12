@@ -192,7 +192,7 @@
     send.disabled=true; typing();
     try{
       const r=await fetch(API+'/public/chat',{method:'POST',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,agent_type:'sarva'})});
       document.getElementById('typing')?.remove();
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
       const data=await r.json();

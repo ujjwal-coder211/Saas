@@ -343,8 +343,8 @@ def _public_demo_auth(client_label: str) -> AuthContext:
 
 
 def _agent_rules(agent_type: str) -> str | None:
-    kind = (agent_type or "sales").lower().strip()
-    if kind in ("aksh", "sarva"):
+    kind = (agent_type or "sarva").lower().strip()
+    if kind in ("aksh", "sarva", "ship"):
         return (
             "You are Sarva, the coding AI inside Sarva Studio (browser code editor). "
             "The user is trying the product on aitotech.in. "
@@ -387,7 +387,7 @@ async def public_chat(
     if not provider_configured():
         raise HTTPException(503, "Sarva providers are not configured (OPENROUTER_API_KEY).")
 
-    work_mode: WorkMode = "ship" if body.agent_type.lower() in ("aksh", "sarva") else "auto"
+    work_mode: WorkMode = "ship" if body.agent_type.lower() == "ship" else "auto"
     try:
         result, _row_id = await _execute_chat(
             body.message.strip(),
