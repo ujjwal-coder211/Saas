@@ -1,8 +1,8 @@
 {
   "model_id": "qwen",
-  "display_name": "Llama 3.1 8B (NVIDIA NIM, free)",
+  "display_name": "Nemotron 70B (NVIDIA NIM, free)",
   "provider": "NVIDIA NIM",
-  "api_model_string": "meta/llama-3.1-8b-instruct",
+  "api_model_string": "nvidia/llama-3.1-nemotron-70b-instruct",
   "architecture_family": "Dense",
   "total_params_b": 32,
   "active_params_b": 32,
@@ -55,5 +55,5 @@
     "avg_temperature_used": 0.3,
     "tends_to": "working code first, minimal prose"
   },
-  "notes": "Routely — fast default/self-model via NVIDIA NIM (free). Falls back to mistral (OpenRouter) if NIM fails."
+  "notes": "Routely — default/self-model: bigger free NIM model for better answers. Falls back to mistral (OpenRouter)."
 }
